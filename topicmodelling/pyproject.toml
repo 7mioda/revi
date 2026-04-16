@@ -8,4 +8,6 @@ dependencies = [
     "turftopic",
     "sentence-transformers",
     "numpy",
+    "anthropic",
+    "python-dotenv",
 ]
