@@ -33,6 +33,17 @@ export interface GithubComment {
 }
 
 /**
+ * The authenticated GitHub user identified by a personal access token.
+ * Returned by `getAuthenticatedUser`.
+ */
+export interface AuthenticatedUser {
+  /** GitHub login (username) of the token owner. */
+  login: string
+  /** Numeric GitHub user ID. */
+  id: number
+}
+
+/**
  * Lightweight reference to a GitHub repository, owner + name only.
  */
 export interface RepoRef {
