@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node --experimental-transform-types src/main.ts",
-    "fetch-my-comments": "node --experimental-transform-types src/scripts/fetch-my-comments.ts",
+    "fetch-my-comments": "tsx src/scripts/fetch-my-comments.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -26,6 +26,7 @@
     "@types/node": "^25.6.0",
     "@types/supertest": "^7.2.0",
     "supertest": "^7.0.0",
+    "tsx": "^4.21.0",
     "vitest": "^3.0.0"
   }
 }

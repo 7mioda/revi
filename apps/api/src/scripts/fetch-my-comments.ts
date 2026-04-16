@@ -86,9 +86,17 @@ async function main(): Promise<void> {
   const allComments: GithubComment[] = []
   for (const repo of repos) {
     const slug = `${repo.owner}/${repo.name}`
-    const comments = await fetchAllComments(client, repo.owner, repo.name)
-    allComments.push(...comments)
-    process.stderr.write(`  ${slug} — ${comments.length} comments\n`)
+    try {
+      const comments = await fetchAllComments(client, repo.owner, repo.name)
+      allComments.push(...comments)
+      process.stderr.write(`  ${slug} — ${comments.length} comments\n`)
+    } catch (err: unknown) {
+      // Skip repos that are blocked (451 DMCA), archived with no access, etc.
+      const status = typeof err === 'object' && err !== null && 'status' in err
+        ? (err as { status: number }).status
+        : undefined
+      process.stderr.write(`  ${slug} — skipped (HTTP ${status ?? 'error'})\n`)
+    }
   }
 
   const output = buildOutput(user, repos, allComments)
