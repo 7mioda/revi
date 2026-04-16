@@ -5,6 +5,8 @@ const envSchema = z.object({
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
   PORT: z.coerce.number().int().positive().default(3000),
+  WEBHOOK_SECRET: z.string().min(1, 'WEBHOOK_SECRET is required'),
+  REVIEW_COMMAND: z.string().min(1, 'REVIEW_COMMAND is required'),
 })
 
 /** Parsed, validated environment configuration. */

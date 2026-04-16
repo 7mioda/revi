@@ -8,6 +8,7 @@ import { GithubModule } from './github/github.module.js'
 import { MeModule } from './me/me.module.js'
 import { SkillsModule } from './skills/skills.module.js'
 import { ReviewsModule } from './reviews/reviews.module.js'
+import { WebhookModule } from './webhook/webhook.module.js'
 
 /**
  * Root application module.
@@ -31,6 +32,7 @@ import { ReviewsModule } from './reviews/reviews.module.js'
     MeModule,
     SkillsModule,
     ReviewsModule,
+    WebhookModule,
   ],
 })
 export class AppModule {}

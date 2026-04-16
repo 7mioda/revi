@@ -6,7 +6,7 @@ import { HttpExceptionFilter } from './github/http-exception.filter.js'
 
 /** Bootstraps the NestJS HTTP server. */
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create(AppModule, { rawBody: true })
 
   app.useGlobalFilters(new HttpExceptionFilter())
 

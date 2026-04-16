@@ -8,7 +8,7 @@
  * Usage:
  *   GITHUB_TOKEN=<pat> node --experimental-transform-types src/scripts/fetch-my-comments.ts
  */
-
+import "dotenv/config";
 import fs from 'fs'
 import path from 'path'
 import {
@@ -83,13 +83,20 @@ async function main(): Promise<void> {
   const repos = await listAccessibleRepos(client)
   process.stderr.write(`Found ${repos.length} repos. Fetching comments…\n`)
 
+  const outputDir = path.resolve('output')
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true })
+  }
+  const outputPath = path.join(outputDir, 'my-comments.json')
+
   const allComments: GithubComment[] = []
   for (const repo of repos) {
     const slug = `${repo.owner}/${repo.name}`
     try {
       const comments = await fetchAllComments(client, repo.owner, repo.name)
       allComments.push(...comments)
-      process.stderr.write(`  ${slug} — ${comments.length} comments\n`)
+      const mine = comments.filter((c) => c.username === user.login)
+      process.stderr.write(`  ${slug} — ${mine.length} comments\n`)
     } catch (err: unknown) {
       // Skip repos that are blocked (451 DMCA), archived with no access, etc.
       const status = typeof err === 'object' && err !== null && 'status' in err
@@ -97,16 +104,11 @@ async function main(): Promise<void> {
         : undefined
       process.stderr.write(`  ${slug} — skipped (HTTP ${status ?? 'error'})\n`)
     }
+    const output = buildOutput(user, repos, allComments)
+    fs.writeFileSync(outputPath, JSON.stringify(output, null, 2))
   }
 
   const output = buildOutput(user, repos, allComments)
-
-  const outputDir = path.resolve('output')
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true })
-  }
-  const outputPath = path.join(outputDir, 'my-comments.json')
-  fs.writeFileSync(outputPath, JSON.stringify(output, null, 2))
 
   process.stderr.write(
     `\nDone. ${output.totalComments} comment(s) by ${output.user} written to ${outputPath}\n`,
