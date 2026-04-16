@@ -6,6 +6,7 @@
     "start": "node --experimental-transform-types src/main.ts",
     "fetch-my-comments": "tsx src/scripts/fetch-my-comments.ts",
     "generate-skill": "tsx src/scripts/generate-skill.ts",
+    "review-pr": "tsx src/scripts/review-pr.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

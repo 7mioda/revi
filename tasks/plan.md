@@ -461,6 +461,173 @@ cat apps/api/output/skill.json      # JSON array with 3 objects, each has name/c
 
 ---
 
+## Task 12 — apps/api: review-pr CLI script
+
+One-shot script that reads the generated skills, fetches a PR from GitHub, runs an LLM review using the skills as the system prompt, and posts the review back to GitHub in a single batch call.
+
+### CLI usage
+
+```sh
+GITHUB_TOKEN=<pat> ANTHROPIC_API_KEY=<key> \
+  yarn workspace @revi/api review-pr <owner>/<repo> <pull_number>
+```
+
+### Dependency graph
+
+```
+output/skill.json
+      │ loadSkills()
+      ▼
+system prompt ──────────────────────────────────────────────────┐
+                                                                 │
+GITHUB_TOKEN → fetchPRMeta()   ─┐                               │
+GITHUB_TOKEN → fetchPRFiles()  ─┤─ buildUserPrompt() ──────────►│ Anthropic API
+GITHUB_TOKEN → fetchPRComments()┘                               │
+                                                                 │
+                                                  parseReviewResult()
+                                                                 │
+                                             mapToGithubReview() │
+                                                                 ▼
+                                        POST /pulls/{n}/reviews (GitHub)
+```
+
+### Files to create
+
+| File | Purpose |
+|---|---|
+| `apps/api/src/scripts/review-pr.ts` | Main script |
+| `apps/api/src/__tests__/review-pr.test.ts` | Unit tests for pure helpers |
+
+### Types
+
+```ts
+export interface ReviewComment {
+  path: string
+  line: number
+  side: 'LEFT' | 'RIGHT'
+  body: string
+}
+
+export interface ReviewResult {
+  summary: string
+  verdict: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
+  comments: ReviewComment[]
+}
+
+export interface GithubReviewPayload {
+  body: string
+  event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
+  comments: Array<{ path: string; line: number; side: 'LEFT' | 'RIGHT'; body: string }>
+}
+```
+
+### Pure helpers (exported — tested without network)
+
+```ts
+/** Read output/skill.json and return the concatenated `content` fields as a single system prompt. */
+export function loadSkills(skillJsonPath: string): string
+
+/** Format PR metadata, file diffs, and existing comments into the LLM user message. */
+export function buildUserPrompt(
+  meta: { title: string; body: string | null; user: string; base: string; head: string },
+  files: Array<{ filename: string; status: string; patch?: string }>,
+  existingComments: Array<{ path: string; line: number; body: string }>,
+): string
+
+/** Parse the LLM response text → ReviewResult. Throws descriptively on invalid input. */
+export function parseReviewResult(text: string): ReviewResult
+
+/** Map a ReviewResult to the GitHub Reviews API payload shape. */
+export function mapToGithubReview(result: ReviewResult): GithubReviewPayload
+```
+
+### Network functions (`main()` only — not unit tested)
+
+| Function | GitHub endpoint |
+|---|---|
+| `fetchPRMeta(client, owner, repo, pull)` | `GET /repos/{owner}/{repo}/pulls/{pull}` |
+| `fetchPRFiles(client, owner, repo, pull)` | `GET /repos/{owner}/{repo}/pulls/{pull}/files` |
+| `fetchExistingComments(client, owner, repo, pull)` | `GET /repos/{owner}/{repo}/pulls/{pull}/comments` |
+| `postReview(client, owner, repo, pull, payload)` | `POST /repos/{owner}/{repo}/pulls/{pull}/reviews` |
+
+All four use the `OctokitClient` from `@revi/octokit` (already has throttling + retry).
+
+### `main()` flow
+
+```
+parse argv[2] (owner/repo) + argv[3] (pull_number)
+→ read GITHUB_TOKEN + ANTHROPIC_API_KEY from env (exit 1 if missing)
+→ loadSkills("output/skill.json")  → system prompt
+→ fetchPRMeta + fetchPRFiles + fetchExistingComments (parallel via Promise.all)
+→ buildUserPrompt(meta, files, comments)
+→ Anthropic messages.create({ system: systemPrompt, messages: [{ role: 'user', content: userPrompt }] })
+→ parseReviewResult(responseText)
+→ mapToGithubReview(result)
+→ postReview(client, owner, repo, pull, payload)
+→ print confirmation to stderr
+```
+
+### User prompt shape (sent to LLM)
+
+```
+## PR: <title>
+**Author:** <user>  **Branch:** <base> ← <head>
+
+### Description
+<body or "(no description)">
+
+### Files changed (<n> files)
+
+#### src/foo.ts (modified)
+\`\`\`diff
+<patch>
+\`\`\`
+
+### Existing review comments (<n>)
+- src/foo.ts:42 — "existing comment body"
+
+---
+Reply with ONLY a JSON object (no markdown fences):
+{
+  "summary": "...",
+  "verdict": "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
+  "comments": [{ "path": "...", "line": <number>, "side": "RIGHT", "body": "..." }]
+}
+```
+
+### New package.json script
+
+```json
+"review-pr": "tsx src/scripts/review-pr.ts"
+```
+
+No new dependencies — uses `@anthropic-ai/sdk` and `@revi/octokit` already installed.
+
+### Acceptance criteria
+
+1. `loadSkills(path)` — reads the JSON array and returns a string containing all `content` fields joined with `\n\n---\n\n`
+2. `loadSkills(path)` — throws when file does not exist
+3. `buildUserPrompt(meta, files, [])` — returns non-empty string containing the PR title
+4. `buildUserPrompt(meta, [], comments)` — still returns non-empty string
+5. `parseReviewResult(validJson)` — returns typed `ReviewResult` with `summary`, `verdict`, `comments`
+6. `parseReviewResult` — throws on malformed JSON
+7. `parseReviewResult` — throws when `verdict` is not one of the three allowed values
+8. `parseReviewResult` — throws when `comments` is not an array
+9. `mapToGithubReview` — maps `summary → body`, `verdict → event`, `comments` pass through
+10. `yarn workspace @revi/api typecheck` passes with 0 errors
+
+### Verification
+
+```sh
+yarn workspace @revi/api test          # all tests green
+yarn workspace @revi/api typecheck     # 0 errors
+GITHUB_TOKEN=<pat> ANTHROPIC_API_KEY=<key> \
+  yarn workspace @revi/api review-pr owner/repo 42
+# → prints "Review posted" confirmation
+```
+
+---
+
 ## Hard rules (from CLAUDE.md)
 
 1. No `any`. No `!` without an inline comment explaining why.

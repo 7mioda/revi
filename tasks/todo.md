@@ -30,7 +30,17 @@
 
 - [x] **Task 10** — apps/api: generate-skill script (single skill, one LLM call)
 
-- [ ] **Task 11** — apps/api: multi-skill generation (one call per dimension)
+- [x] **Task 11** — apps/api: multi-skill generation (one call per dimension)
+
+- [ ] **Task 12** — apps/api: review-pr CLI script
+  - Create `apps/api/src/scripts/review-pr.ts`
+  - Pure helpers: `loadSkills`, `buildUserPrompt`, `parseReviewResult`, `mapToGithubReview`
+  - Network functions in `main()`: fetchPRMeta, fetchPRFiles, fetchExistingComments, postReview
+  - Add `"review-pr": "tsx src/scripts/review-pr.ts"` to package.json scripts
+  - Write failing tests for all four pure helpers (RED)
+  - Implement (GREEN)
+  - Verify: `yarn workspace @revi/api test` all green
+  - Verify: `yarn workspace @revi/api typecheck` passes
   - Add `SkillDimension` type + `SKILL_DIMENSIONS` array (style, technical-patterns, testing)
   - Update `buildPrompt(dimension, comments)` — dimension-specific focused prompts
   - Add `generateAllSkills(client, dimensions, comments)` — serial LLM calls
