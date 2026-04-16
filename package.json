@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "api": "yarn workspace @revi/api"
+    "api": "yarn workspace @revi/api",
+    "filter": "yarn workspace filter-comments start"
   },
   "workspaces": [
     "packages/*",

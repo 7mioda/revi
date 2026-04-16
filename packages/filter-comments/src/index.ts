@@ -1,42 +1,31 @@
 import Anthropic from "@anthropic-ai/sdk";
 import "dotenv/config";
 import * as fs from "node:fs";
-import * as readline from "node:readline";
+import * as path from "node:path";
 
 // --- Types ---
 
 interface PrComment {
-  url: string;
-  pull_request_review_id: number | null;
-  id: number;
-  node_id: string;
-  diff_hunk: string;
-  path: string;
-  position: number | null;
-  original_position: number | null;
-  commit_id: string;
-  original_commit_id: string;
-  in_reply_to_id?: number;
-  user: {
-    login: string;
-    id: number;
-    type: string;
-    [key: string]: unknown;
-  };
+  githubId: number;
+  username: string;
+  type: "pr_review_comment" | "pr_comment" | "commit_comment";
   body: string;
-  created_at: string;
-  updated_at: string;
-  html_url: string;
-  pull_request_url: string;
-  author_association: string;
-  start_line: number | null;
-  original_start_line: number | null;
-  line: number | null;
-  original_line: number | null;
-  side: string;
-  subject_type?: string;
-  reactions?: Record<string, unknown>;
-  [key: string]: unknown;
+  path: string | null;
+  diffHunk: string | null;
+  pullRequestNumber: number | null;
+  repoOwner: string;
+  repoName: string;
+  createdAt: string;
+  updatedAt: string;
+  inReplyToId?: number;
+}
+
+interface DataFile {
+  user: string;
+  fetchedAt: string;
+  totalRepos: number;
+  totalComments: number;
+  comments: PrComment[];
 }
 
 interface LlmResult {
@@ -72,11 +61,11 @@ ${comment.path}
 
 ## Diff hunk (context around the comment)
 \`\`\`
-${comment.diff_hunk}
+${comment.diffHunk}
 \`\`\`
 
 ## Comment
-Author: ${comment.user.login}
+Author: ${comment.username}
 ${comment.body}`;
 }
 
@@ -106,7 +95,7 @@ function wordCount(text: string): number {
 }
 
 function isPartOfConversation(comment: PrComment): boolean {
-  return comment.in_reply_to_id != null;
+  return comment.inReplyToId != null;
 }
 
 function preFilter(comment: PrComment): { pass: boolean; reason?: string } {
@@ -138,7 +127,7 @@ async function evaluateComment(
     (block) => block.type === "tool_use"
   );
   if (!toolBlock || toolBlock.type !== "tool_use") {
-    throw new Error(`No tool_use block in response for comment ${comment.id}`);
+    throw new Error(`No tool_use block in response for comment ${comment.githubId}`);
   }
 
   const input = toolBlock.input as { is_relevant: boolean };
@@ -146,23 +135,25 @@ async function evaluateComment(
 }
 
 async function main() {
-  const inputPath = process.argv[2];
-  const outputPath = process.argv[3];
-
-  if (!inputPath || !outputPath) {
-    console.error("Usage: tsx src/index.ts <input.jsonl> <output.jsonl>");
-    process.exit(1);
-  }
+  const repoRoot = path.resolve(__dirname, "../../..");
+  const inputPath = process.argv[2] ?? path.join(repoRoot, "apps/api/data.json");
+  const limit = parseInt(process.argv[3] ?? "500", 10);
+  const outputPath = path.join(repoRoot, "output.jsonl");
 
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error("Missing ANTHROPIC_API_KEY in environment / .env file");
     process.exit(1);
   }
 
+  console.log(`Input:  ${inputPath}`);
+  console.log(`Output: ${outputPath}`);
+  console.log(`Limit:  ${limit} comments\n`);
+
   const client = new Anthropic();
 
-  const inputStream = fs.createReadStream(inputPath, "utf-8");
-  const rl = readline.createInterface({ input: inputStream });
+  const raw = fs.readFileSync(inputPath, "utf-8");
+  const data: DataFile = JSON.parse(raw);
+  const comments = data.comments.slice(0, limit);
 
   // Clear output file
   fs.writeFileSync(outputPath, "");
@@ -171,20 +162,17 @@ async function main() {
   let preFiltered = 0;
   let relevant = 0;
 
-  for await (const line of rl) {
-    if (!line.trim()) continue;
-
-    const comment: PrComment = JSON.parse(line);
+  for (const comment of comments) {
     total++;
 
     const filter = preFilter(comment);
     if (!filter.pass) {
       preFiltered++;
-      console.log(`[${total}] Skipped comment ${comment.id}: ${filter.reason}`);
+      console.log(`[${total}] Skipped comment ${comment.githubId}: ${filter.reason}`);
       continue;
     }
 
-    console.log(`[${total}] Evaluating comment ${comment.id} on ${comment.path}...`);
+    console.log(`[${total}] Evaluating comment ${comment.githubId} on ${comment.path}...`);
 
     const llmResult = await evaluateComment(client, comment);
 
