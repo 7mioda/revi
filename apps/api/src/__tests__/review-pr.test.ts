@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import type { ReviewResult } from '../scripts/review-pr.js'
+import type { ReviewResult, SkillEntry } from '../scripts/review-pr.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -32,6 +32,11 @@ const SAMPLE_COMMENTS = [
   { path: 'src/auth.ts', line: 3, body: 'this can be extracted' },
 ]
 
+const SAMPLE_SKILLS: SkillEntry[] = [
+  { name: 'review-style', content: 'Be concise.', tags: ['style', 'communication'] },
+  { name: 'technical-patterns', content: 'Prefer interfaces.', tags: ['typescript', 'architecture'] },
+]
+
 const VALID_REVIEW_JSON: ReviewResult = {
   summary: 'Overall looks solid.',
   verdict: 'APPROVE',
@@ -39,6 +44,34 @@ const VALID_REVIEW_JSON: ReviewResult = {
     { path: 'src/auth.ts', line: 5, side: 'RIGHT', body: 'consider using async/await here' },
   ],
 }
+
+// ---------------------------------------------------------------------------
+// loadSkillEntries
+// ---------------------------------------------------------------------------
+
+describe('loadSkillEntries', () => {
+  it('returns the parsed skill array', async () => {
+    const { loadSkillEntries } = await import('../scripts/review-pr.js')
+    const skills = [
+      { name: 'skill-a', content: 'Be concise.', tags: ['style'] },
+      { name: 'skill-b', content: 'Prefer interfaces.', tags: ['typescript'] },
+    ]
+    const tmpPath = writeTempJson(skills)
+    try {
+      const result = loadSkillEntries(tmpPath)
+      expect(result).toHaveLength(2)
+      expect(result[0]?.name).toBe('skill-a')
+      expect(result[1]?.name).toBe('skill-b')
+    } finally {
+      fs.unlinkSync(tmpPath)
+    }
+  })
+
+  it('throws when file does not exist', async () => {
+    const { loadSkillEntries } = await import('../scripts/review-pr.js')
+    expect(() => loadSkillEntries('/no/such/file/skill.json')).toThrow()
+  })
+})
 
 // ---------------------------------------------------------------------------
 // loadSkills
@@ -70,7 +103,6 @@ describe('loadSkills', () => {
     const tmpPath = writeTempJson(skills)
     try {
       const result = loadSkills(tmpPath)
-      // Both should appear and there should be something between them
       const idxA = result.indexOf('AAA')
       const idxB = result.indexOf('BBB')
       expect(idxA).toBeGreaterThanOrEqual(0)
@@ -93,20 +125,20 @@ describe('loadSkills', () => {
 describe('buildUserPrompt', () => {
   it('returns a non-empty string', async () => {
     const { buildUserPrompt } = await import('../scripts/review-pr.js')
-    const result = buildUserPrompt(SAMPLE_META, SAMPLE_FILES, SAMPLE_COMMENTS)
+    const result = buildUserPrompt(SAMPLE_META, SAMPLE_FILES, SAMPLE_COMMENTS, SAMPLE_SKILLS)
     expect(typeof result).toBe('string')
     expect(result.length).toBeGreaterThan(0)
   })
 
   it('includes the PR title', async () => {
     const { buildUserPrompt } = await import('../scripts/review-pr.js')
-    const result = buildUserPrompt(SAMPLE_META, SAMPLE_FILES, SAMPLE_COMMENTS)
+    const result = buildUserPrompt(SAMPLE_META, SAMPLE_FILES, SAMPLE_COMMENTS, SAMPLE_SKILLS)
     expect(result).toContain(SAMPLE_META.title)
   })
 
   it('includes each changed filename', async () => {
     const { buildUserPrompt } = await import('../scripts/review-pr.js')
-    const result = buildUserPrompt(SAMPLE_META, SAMPLE_FILES, [])
+    const result = buildUserPrompt(SAMPLE_META, SAMPLE_FILES, [], SAMPLE_SKILLS)
     for (const f of SAMPLE_FILES) {
       expect(result).toContain(f.filename)
     }
@@ -114,26 +146,40 @@ describe('buildUserPrompt', () => {
 
   it('includes existing comment bodies', async () => {
     const { buildUserPrompt } = await import('../scripts/review-pr.js')
-    const result = buildUserPrompt(SAMPLE_META, [], SAMPLE_COMMENTS)
+    const result = buildUserPrompt(SAMPLE_META, [], SAMPLE_COMMENTS, SAMPLE_SKILLS)
     expect(result).toContain(SAMPLE_COMMENTS[0]?.body)
+  })
+
+  it('lists each loaded skill name in the voice instruction', async () => {
+    const { buildUserPrompt } = await import('../scripts/review-pr.js')
+    const result = buildUserPrompt(SAMPLE_META, [], [], SAMPLE_SKILLS)
+    for (const skill of SAMPLE_SKILLS) {
+      expect(result).toContain(skill.name)
+    }
+  })
+
+  it('includes skill count in the voice instruction', async () => {
+    const { buildUserPrompt } = await import('../scripts/review-pr.js')
+    const result = buildUserPrompt(SAMPLE_META, [], [], SAMPLE_SKILLS)
+    expect(result).toContain(String(SAMPLE_SKILLS.length))
   })
 
   it('works with no existing comments', async () => {
     const { buildUserPrompt } = await import('../scripts/review-pr.js')
-    const result = buildUserPrompt(SAMPLE_META, SAMPLE_FILES, [])
+    const result = buildUserPrompt(SAMPLE_META, SAMPLE_FILES, [], SAMPLE_SKILLS)
     expect(typeof result).toBe('string')
     expect(result.length).toBeGreaterThan(0)
   })
 
   it('works with no files', async () => {
     const { buildUserPrompt } = await import('../scripts/review-pr.js')
-    const result = buildUserPrompt(SAMPLE_META, [], [])
+    const result = buildUserPrompt(SAMPLE_META, [], [], SAMPLE_SKILLS)
     expect(result).toContain(SAMPLE_META.title)
   })
 
   it('includes a JSON reply instruction', async () => {
     const { buildUserPrompt } = await import('../scripts/review-pr.js')
-    const result = buildUserPrompt(SAMPLE_META, [], [])
+    const result = buildUserPrompt(SAMPLE_META, [], [], SAMPLE_SKILLS)
     expect(result).toContain('JSON')
   })
 })

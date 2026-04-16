@@ -67,9 +67,11 @@ interface ExistingComment {
   body: string
 }
 
-/** Minimal shape of a `SkillOutput` entry stored in `output/skill.json`. */
-interface SkillEntry {
+/** A single entry from `output/skill.json`. */
+export interface SkillEntry {
+  name: string
   content: string
+  tags: string[]
 }
 
 const VALID_VERDICTS = new Set(['APPROVE', 'REQUEST_CHANGES', 'COMMENT'])
@@ -79,32 +81,43 @@ const VALID_VERDICTS = new Set(['APPROVE', 'REQUEST_CHANGES', 'COMMENT'])
 // ---------------------------------------------------------------------------
 
 /**
- * Reads `output/skill.json` (a `SkillOutput[]` array) and returns all
- * `content` fields concatenated with `---` separators — ready to use as an
- * LLM system prompt.
+ * Reads `output/skill.json` and returns the parsed array of skill entries.
+ *
+ * @param skillJsonPath - Absolute or relative path to `skill.json`.
+ * @throws When the file does not exist or cannot be parsed.
+ */
+export function loadSkillEntries(skillJsonPath: string): SkillEntry[] {
+  const raw = fs.readFileSync(skillJsonPath, 'utf-8')
+  return JSON.parse(raw) as SkillEntry[]
+}
+
+/**
+ * Reads `output/skill.json` and returns all `content` fields concatenated
+ * with `---` separators — ready to use as an LLM system prompt.
  *
  * @param skillJsonPath - Absolute or relative path to `skill.json`.
  * @throws When the file does not exist or cannot be parsed.
  */
 export function loadSkills(skillJsonPath: string): string {
-  const raw = fs.readFileSync(skillJsonPath, 'utf-8')
-  const skills = JSON.parse(raw) as SkillEntry[]
-  console.log('skills', skills)
-  return skills.map((s) => s.content).join('\n\n---\n\n')
+  return loadSkillEntries(skillJsonPath)
+    .map((s) => s.content)
+    .join('\n\n---\n\n')
 }
 
 /**
- * Formats PR metadata, file diffs, and existing comments into a single
- * user message for the LLM review call.
+ * Formats PR metadata, file diffs, existing comments, and loaded skills into
+ * a single user message for the LLM review call.
  *
  * @param meta             - PR title, body, author, branch info.
  * @param files            - Changed files with their diff patches.
  * @param existingComments - Review comments already posted on the PR.
+ * @param skills           - Parsed skill entries whose names are listed in the voice instruction.
  */
 export function buildUserPrompt(
   meta: PRMeta,
   files: PRFile[],
   existingComments: ExistingComment[],
+  skills: SkillEntry[],
 ): string {
   const fileSections = files
     .map((f) => {
@@ -135,14 +148,13 @@ ${fileSections || '*(no text files changed)*'}
 ${existingSection}
 
 ---
-## Your review voice
+## Apply your loaded skills
 
-The system prompt defines the reviewer's exact style. You MUST follow it strictly for every word you write:
+Your system prompt contains ${skills.length} reviewer-style skill${skills.length === 1 ? '' : 's'}:
+${skills.map((s) => `- **${s.name}** (${s.tags.join(', ')})`).join('\n')}
 
-- **Tone & length**: Match the reviewer's tone and comment length exactly — typically 1–2 short sentences, conversational, never formal. No bullet points or headers inside comment bodies.
-- **Phrasing**: Use the reviewer's real phrasing patterns (e.g. "you can …", "we can …", "why not …?", trailing ", no?"). Do not write polished, AI-sounding prose.
-- **Suggestions vs. requirements**: Frame optional suggestions with softening language; use plain imperatives only for genuine blockers — exactly as described in the style skill.
-- **Summary**: Write the summary field in the same voice as the inline comments — brief, direct, first-person, conversational.
+Every word you write — each inline comment body and the summary — MUST reflect these skills.
+Do not write generic or polished AI feedback. Write exactly as this reviewer would write.
 
 Reply with **only** a JSON object (no markdown fences, no extra text):
 {
@@ -342,8 +354,9 @@ async function main(): Promise<void> {
   }
 
   process.stderr.write(`Loading skills from ${skillPath}…\n`)
-  const systemPrompt = loadSkills(skillPath)
-  console.log('systemPrompt', systemPrompt)
+  const skills = loadSkillEntries(skillPath)
+  const systemPrompt = skills.map((s) => s.content).join('\n\n---\n\n')
+  process.stderr.write(`  Loaded ${skills.length} skill(s): ${skills.map((s) => s.name).join(', ')}\n`)
 
   const client = createOctokitClient(githubToken)
 
@@ -357,8 +370,7 @@ async function main(): Promise<void> {
     `  "${meta.title}" — ${files.length} file(s), ${existingComments.length} existing comment(s)\n`,
   )
 
-  const userPrompt = buildUserPrompt(meta, files, existingComments)
-  console.log('userPrompt', userPrompt)
+  const userPrompt = buildUserPrompt(meta, files, existingComments, skills)
 
   process.stderr.write('Running LLM review…\n')
   const anthropic = new Anthropic({ apiKey: anthropicKey })
