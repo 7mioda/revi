@@ -45,7 +45,7 @@ export function HeroSection() {
 
           {/* CTA */}
           <a
-            href="#waitlist"
+            href="http://localhost:3001"
             className="bg-[#0a0908] text-[13px] font-medium text-white transition-opacity hover:opacity-90"
             style={{ padding: "8px 16px", borderRadius: "8px" }}
           >

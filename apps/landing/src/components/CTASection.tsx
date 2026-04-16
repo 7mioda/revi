@@ -29,7 +29,7 @@ export function CTASection() {
         {/* CTA Buttons */}
         <div className="mt-2 flex flex-col items-center gap-3 sm:flex-row">
           <a
-            href="#waitlist"
+            href="http://localhost:3001"
             className={cn(
               "inline-flex items-center justify-center",
               "rounded-lg bg-[#0a0908] px-6 py-3",

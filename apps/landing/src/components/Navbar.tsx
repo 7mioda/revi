@@ -25,7 +25,7 @@ export function Navbar() {
     >
       <nav className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-3">
         {/* Logo */}
-        <a href="/" className="flex items-center">
+        <a href="http://localhost:3001" className="flex items-center">
           <Image
             src="/logo-revi.svg"
             alt="Revi"
@@ -50,7 +50,7 @@ export function Navbar() {
 
         {/* Desktop CTA */}
         <a
-          href="#waitlist"
+          href="http://localhost:3001"
           className="hidden text-[13px] font-medium text-[#0a0908] transition-opacity duration-150 hover:opacity-70 md:inline-flex"
           style={{
             padding: "8px 16px",
@@ -111,7 +111,7 @@ export function Navbar() {
             </a>
           ))}
           <a
-            href="#waitlist"
+            href="http://localhost:3001"
             className="rounded-full px-4 py-2 text-[14px] text-[#0a0908]"
             style={{ border: "1px solid rgba(0, 0, 0, 0.12)" }}
             onClick={() => setMobileOpen(false)}
