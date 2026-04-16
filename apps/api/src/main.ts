@@ -2,10 +2,13 @@ import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { AppModule } from './app.module.js'
+import { HttpExceptionFilter } from './github/http-exception.filter.js'
 
 /** Bootstraps the NestJS HTTP server. */
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule)
+
+  app.useGlobalFilters(new HttpExceptionFilter())
 
   app.useGlobalPipes(
     new ValidationPipe({

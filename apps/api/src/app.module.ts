@@ -2,6 +2,7 @@ import 'reflect-metadata'
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { validateEnv } from './config.js'
+import { GithubModule } from './github/github.module.js'
 
 /**
  * Root application module.
@@ -15,6 +16,7 @@ import { validateEnv } from './config.js'
       isGlobal: true,
       validate: validateEnv,
     }),
+    GithubModule,
   ],
 })
 export class AppModule {}

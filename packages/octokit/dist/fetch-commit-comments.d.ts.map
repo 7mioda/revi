@@ -1,0 +1,1 @@
+{"version":3,"file":"fetch-commit-comments.d.ts","sourceRoot":"","sources":["../src/fetch-commit-comments.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,aAAa,CAAA;AAChD,OAAO,KAAK,EAAE,aAAa,EAAE,MAAM,YAAY,CAAA;AAE/C;;;;;;;;GAQG;AACH,wBAAsB,mBAAmB,CACvC,MAAM,EAAE,aAAa,EACrB,KAAK,EAAE,MAAM,EACb,IAAI,EAAE,MAAM,GACX,OAAO,CAAC,aAAa,EAAE,CAAC,CAmB1B"}
