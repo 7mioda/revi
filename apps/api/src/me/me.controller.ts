@@ -1,5 +1,5 @@
 import 'reflect-metadata'
-import { Controller, Post, Body } from '@nestjs/common'
+import { Controller, Post, Body, Inject } from '@nestjs/common'
 import { MeService } from './me.service.js'
 import { FetchMyCommentsDto } from './dto/fetch-my-comments.dto.js'
 import type { FetchAndSaveResult } from './me.service.js'
@@ -10,7 +10,7 @@ import type { FetchAndSaveResult } from './me.service.js'
  */
 @Controller('me')
 export class MeController {
-  constructor(private readonly me: MeService) {}
+  constructor(@Inject(MeService) private readonly me: MeService) {}
 
   /**
    * Fetches all comments made by the token owner across every accessible

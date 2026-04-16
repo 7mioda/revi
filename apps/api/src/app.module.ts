@@ -6,6 +6,8 @@ import { validateEnv } from './config.js'
 import type { Env } from './config.js'
 import { GithubModule } from './github/github.module.js'
 import { MeModule } from './me/me.module.js'
+import { SkillsModule } from './skills/skills.module.js'
+import { ReviewsModule } from './reviews/reviews.module.js'
 
 /**
  * Root application module.
@@ -27,6 +29,8 @@ import { MeModule } from './me/me.module.js'
     }),
     GithubModule,
     MeModule,
+    SkillsModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}

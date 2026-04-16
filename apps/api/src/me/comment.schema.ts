@@ -14,47 +14,47 @@ export type CommentDocument = HydratedDocument<Comment>
 @Schema({ collection: 'comments', timestamps: false })
 export class Comment {
   /** The numeric GitHub ID of the comment — unique across all sources. */
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ type: Number, required: true, unique: true, index: true })
   githubId!: number
 
   /** GitHub login of the comment author. */
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   username!: string
 
   /** Discriminant: which GitHub API the comment came from. */
-  @Prop({ required: true, enum: ['pr_review_comment', 'pr_comment', 'commit_comment'] })
+  @Prop({ type: String, required: true, enum: ['pr_review_comment', 'pr_comment', 'commit_comment'] })
   type!: CommentType
 
   /** Raw Markdown body. */
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   body!: string
 
   /** File path (PR review comments only). */
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   path!: string | null
 
   /** Raw diff hunk (PR review comments only). */
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   diffHunk!: string | null
 
   /** Pull request number, if applicable. */
-  @Prop({ default: null })
+  @Prop({ type: Number, default: null })
   pullRequestNumber!: number | null
 
   /** Repository owner login. */
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   repoOwner!: string
 
   /** Repository name. */
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   repoName!: string
 
   /** ISO 8601 creation timestamp from GitHub. */
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   createdAt!: string
 
   /** ISO 8601 last-updated timestamp from GitHub. */
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   updatedAt!: string
 }
 

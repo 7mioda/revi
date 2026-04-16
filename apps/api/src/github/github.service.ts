@@ -1,5 +1,5 @@
 import 'reflect-metadata'
-import { Injectable } from '@nestjs/common'
+import { Injectable, Inject } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import {
   createOctokitClient,
@@ -15,7 +15,7 @@ import type { Env } from '../config.js'
  */
 @Injectable()
 export class GithubService {
-  constructor(private readonly config: ConfigService<Env, true>) {}
+  constructor(@Inject(ConfigService) private readonly config: ConfigService<Env, true>) {}
 
   /**
    * Lists all repositories owned by a GitHub user.

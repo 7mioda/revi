@@ -3,6 +3,7 @@ import { z } from 'zod'
 const envSchema = z.object({
   GITHUB_TOKEN: z.string().min(1, 'GITHUB_TOKEN is required'),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
+  ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
   PORT: z.coerce.number().int().positive().default(3000),
 })
 

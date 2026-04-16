@@ -15,5 +15,6 @@ import { Comment, CommentSchema } from './comment.schema.js'
   ],
   controllers: [MeController],
   providers: [MeService],
+  exports: [MongooseModule],
 })
 export class MeModule {}

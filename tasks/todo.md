@@ -32,20 +32,21 @@
 
 - [x] **Task 11** — apps/api: multi-skill generation (one call per dimension)
 
-- [ ] **Task 12** — apps/api: review-pr CLI script
-  - Create `apps/api/src/scripts/review-pr.ts`
-  - Pure helpers: `loadSkills`, `buildUserPrompt`, `parseReviewResult`, `mapToGithubReview`
-  - Network functions in `main()`: fetchPRMeta, fetchPRFiles, fetchExistingComments, postReview
-  - Add `"review-pr": "tsx src/scripts/review-pr.ts"` to package.json scripts
-  - Write failing tests for all four pure helpers (RED)
-  - Implement (GREEN)
-  - Verify: `yarn workspace @revi/api test` all green
-  - Verify: `yarn workspace @revi/api typecheck` passes
-  - Add `SkillDimension` type + `SKILL_DIMENSIONS` array (style, technical-patterns, testing)
-  - Update `buildPrompt(dimension, comments)` — dimension-specific focused prompts
-  - Add `generateAllSkills(client, dimensions, comments)` — serial LLM calls
-  - Update `main()` to call `generateAllSkills` and write `SkillOutput[]` to `skill.json`
-  - Update tests: new `buildPrompt` signature, `generateAllSkills` with mock Anthropic client
-  - Verify: `yarn workspace @revi/api test` all green
-  - Verify: script writes `skill.json` as a JSON array with 3 entries (name/content/tags each)
-  - Verify: `yarn workspace @revi/api typecheck` passes
+- [x] **Task 12** — apps/api: review-pr CLI script
+
+---
+
+## Phase 5: Scripts as endpoints
+
+- [x] **Task 13** — Add `ANTHROPIC_API_KEY` to `apps/api/src/config.ts` Zod schema
+- [x] **Task 14** — Export `MongooseModule` from `MeModule` (`apps/api/src/me/me.module.ts`)
+- [x] **Task 15** — SkillsModule: `POST /skills` (skill.schema, service, controller, module, dto)
+- [x] **Task 16** — ReviewsModule: `POST /reviews` (service, controller, module, dto)
+- [x] **Task 17** — Register `SkillsModule` + `ReviewsModule` in `AppModule`; smoke test passes
+
+---
+
+## Phase 6: Onboarding pipeline (frontend)
+
+- [x] **Task 18** — route.ts: replace `complete_onboarding` with `fetch_comments` + `generate_skills` + `review_pr` tools (all with `execute`); update system prompt; add `API_URL` env; `maxSteps: 20`
+- [x] **Task 19** — onboarding-chat.tsx: remove completion screen; add inline tool status chips (running/done) for all three pipeline tools

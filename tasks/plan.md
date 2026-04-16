@@ -628,6 +628,188 @@ GITHUB_TOKEN=<pat> ANTHROPIC_API_KEY=<key> \
 
 ---
 
+---
+
+## Phase 5 — Expose scripts as API endpoints
+
+### Context
+
+`fetch-my-comments` is already covered by `POST /me/comments`. Two new endpoints are needed:
+- `POST /skills` — wraps `generate-skill.ts`
+- `POST /reviews` — wraps `review-pr.ts`
+
+Full workflow: `POST /me/comments` → `POST /skills` → `POST /reviews`
+
+---
+
+## Task 13 — Add ANTHROPIC_API_KEY to config
+
+Add `ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required')` to the `envSchema` in `apps/api/src/config.ts`.
+
+**Files to modify:**
+- `apps/api/src/config.ts`
+
+**Acceptance criteria:**
+- `yarn workspace @revi/api typecheck` passes
+- Missing `ANTHROPIC_API_KEY` at startup → Zod error, process exits non-zero
+
+---
+
+## Task 14 — Export MongooseModule from MeModule
+
+Add `exports: [MongooseModule]` to `MeModule` so the `Comment` model injection token is available to importing modules (`SkillsModule` needs it).
+
+**Files to modify:**
+- `apps/api/src/me/me.module.ts`
+
+**Acceptance criteria:**
+- `yarn workspace @revi/api typecheck` passes, existing tests unchanged
+
+---
+
+## Task 15 — SkillsModule: POST /skills
+
+New NestJS module that generates a skill profile from stored comments.
+
+### Files to create
+```
+apps/api/src/skills/
+  skill.schema.ts            — Mongoose schema: name, content, tags, batchId, generatedAt
+  dto/generate-skills.dto.ts — { sampleSize?: number }  (@IsOptional @IsInt @Min(1) @Max(500))
+  skills.service.ts          — business logic
+  skills.controller.ts       — POST /skills
+  skills.module.ts
+```
+
+### Service logic
+1. Query all `Comment` documents → `BadRequestException('No comments found. Run POST /me/comments first.')` if empty
+2. `sampleRecentComments(comments, dto.sampleSize ?? 200)` from `../scripts/generate-skill.js`
+3. `generateAllSkills(new Anthropic({ apiKey }), SKILL_DIMENSIONS, sample)` from same file
+4. `batchId = crypto.randomUUID()`, `generatedAt = new Date().toISOString()`
+5. `skillModel.insertMany(skills.map(s => ({ ...s, batchId, generatedAt })))`
+6. Return `{ generated: skills.length, skills }`
+
+### SkillsModule imports
+- `MeModule` (provides `InjectModel(Comment.name)` via exported `MongooseModule`)
+- `MongooseModule.forFeature([{ name: Skill.name, schema: SkillSchema }])`
+
+### Response 201
+```json
+{ "generated": 3, "skills": [{ "name": "review-style", "content": "...", "tags": [...] }] }
+```
+
+**Error**: `400` if no comments in DB
+
+---
+
+## Task 16 — ReviewsModule: POST /reviews
+
+New NestJS module that runs a PR review using the latest skill batch.
+
+### Files to create
+```
+apps/api/src/reviews/
+  dto/create-review.dto.ts  — { owner, repo, pullNumber, post? }
+  reviews.service.ts        — business logic
+  reviews.controller.ts     — POST /reviews
+  reviews.module.ts
+```
+
+### Service logic
+1. Load latest skill batch: `skillModel.findOne().sort({ generatedAt: -1 })` → get `batchId` → `skillModel.find({ batchId })` → `BadRequestException('No skills found. Run POST /skills first.')` if empty
+2. Build skills string: `skills.map(s => s.content).join('\n\n---\n\n')`
+3. Fetch PR: `Promise.all([fetchPRMeta, fetchPRFiles, fetchExistingComments])` — lift private functions from `review-pr.ts` inline into service (they are simple Octokit calls)
+4. `buildUserPrompt(meta, files, existingComments, skillsString)` from `../scripts/review-pr.js`
+5. Call Anthropic, parse with `parseReviewResult(text)` from same file
+6. If `dto.post !== false`: `mapToGithubReview(result)` + post via Octokit
+7. Return `{ ...result, posted: dto.post !== false }`
+
+### ReviewsModule imports
+- `MongooseModule.forFeature([{ name: Skill.name, schema: SkillSchema }])` only — no MeModule needed
+
+### Request body
+```json
+{ "owner": "acme", "repo": "backend", "pullNumber": 42, "post": true }
+```
+
+### Response 201
+```json
+{ "summary": "...", "verdict": "APPROVE", "comments": [...], "posted": true }
+```
+
+**Errors**: `400` no skills; `404` bad PR (HttpExceptionFilter); `400` ValidationPipe
+
+---
+
+## Task 17 — Register new modules in AppModule
+
+Add `SkillsModule` and `ReviewsModule` imports to `apps/api/src/app.module.ts`.
+
+**Acceptance criteria:**
+- `yarn workspace @revi/api typecheck` passes
+- `yarn workspace @revi/api start` boots with all four routes registered
+- Full smoke test passes (see Verification below)
+
+---
+
+### Dependency graph (Phase 5)
+
+```
+13 (config)  ──────────────────────────────────────────┐
+14 (MeModule export)  ─────────────────────────────┐   │
+                                                   │   │
+                                               ┌───▼───▼──────────────────┐
+                                               │  15 (SkillsModule)        │
+                                               └──────────────┬────────────┘
+                                                              │
+13 (config)  ──────────────────────────────────────────┐     │
+                                               ┌───────▼─────▼────────────┐
+                                               │  16 (ReviewsModule)       │
+                                               └──────────────┬────────────┘
+                                                              │
+                                                  ┌───────────▼────────────┐
+                                                  │  17 (AppModule wiring)  │
+                                                  └────────────────────────┘
+```
+
+Tasks 13, 14 are independent. Task 15 depends on 13+14. Task 16 depends on 13+15. Task 17 depends on 15+16.
+
+---
+
+### Verification (Phase 5)
+
+```sh
+# Typecheck
+yarn workspace @revi/api typecheck   # 0 errors
+
+# Existing tests
+yarn workspace @revi/api test        # all pass
+
+# Smoke test
+GITHUB_TOKEN=<pat> ANTHROPIC_API_KEY=<key> MONGODB_URI=<uri> yarn workspace @revi/api start
+
+curl -X POST http://localhost:3000/me/comments \
+  -H 'Content-Type: application/json' -d '{"token":"ghp_..."}'
+# → { "user": "...", "saved": N, "breakdown": {...} }
+
+curl -X POST http://localhost:3000/skills \
+  -H 'Content-Type: application/json' -d '{}'
+# → { "generated": 3, "skills": [...] }
+
+curl -X POST http://localhost:3000/reviews \
+  -H 'Content-Type: application/json' \
+  -d '{"owner":"acme","repo":"backend","pullNumber":42,"post":false}'
+# → { "summary":"...", "verdict":"...", "comments":[...], "posted":false }
+
+# Error paths
+curl -X POST http://localhost:3000/reviews \
+  -H 'Content-Type: application/json' \
+  -d '{"owner":"acme","repo":"backend","pullNumber":-1}'
+# → 400 ValidationPipe
+```
+
+---
+
 ## Hard rules (from CLAUDE.md)
 
 1. No `any`. No `!` without an inline comment explaining why.

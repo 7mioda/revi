@@ -6,6 +6,7 @@ import {
   Param,
   Body,
   Headers,
+  Inject,
 } from '@nestjs/common'
 import { GithubService } from './github.service.js'
 import type { RepoRef, GithubComment, CommentType } from '@revi/octokit'
@@ -29,7 +30,7 @@ interface FetchCommentsResponse {
  */
 @Controller('github')
 export class GithubController {
-  constructor(private readonly github: GithubService) {}
+  constructor(@Inject(GithubService) private readonly github: GithubService) {}
 
   /**
    * Lists all repositories owned by the given GitHub user.

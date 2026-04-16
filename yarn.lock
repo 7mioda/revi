@@ -92,6 +92,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@anthropic-ai/sdk@npm:^0.52.0":
+  version: 0.52.0
+  resolution: "@anthropic-ai/sdk@npm:0.52.0"
+  bin:
+    anthropic-ai-sdk: bin/cli
+  checksum: 09b8edc517d05c76bfa63f72537aad4e292d08560daf7a179e9f7ab648278a74e41ef34688e9711d54e6219e57d92a6b22105b9a0648a227dd80fdc15dd80abd
+  languageName: node
+  linkType: hard
+
 "@borewit/text-codec@npm:^0.2.1":
   version: 0.2.2
   resolution: "@borewit/text-codec@npm:0.2.2"
