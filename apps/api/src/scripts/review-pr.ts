@@ -11,6 +11,7 @@
  *     yarn workspace @revi/api review-pr <owner>/<repo> <pull_number>
  */
 
+import 'dotenv/config'
 import fs from 'fs'
 import path from 'path'
 import Anthropic from '@anthropic-ai/sdk'
@@ -88,6 +89,7 @@ const VALID_VERDICTS = new Set(['APPROVE', 'REQUEST_CHANGES', 'COMMENT'])
 export function loadSkills(skillJsonPath: string): string {
   const raw = fs.readFileSync(skillJsonPath, 'utf-8')
   const skills = JSON.parse(raw) as SkillEntry[]
+  console.log('skills', skills)
   return skills.map((s) => s.content).join('\n\n---\n\n')
 }
 
@@ -133,12 +135,21 @@ ${fileSections || '*(no text files changed)*'}
 ${existingSection}
 
 ---
+## Your review voice
+
+The system prompt defines the reviewer's exact style. You MUST follow it strictly for every word you write:
+
+- **Tone & length**: Match the reviewer's tone and comment length exactly — typically 1–2 short sentences, conversational, never formal. No bullet points or headers inside comment bodies.
+- **Phrasing**: Use the reviewer's real phrasing patterns (e.g. "you can …", "we can …", "why not …?", trailing ", no?"). Do not write polished, AI-sounding prose.
+- **Suggestions vs. requirements**: Frame optional suggestions with softening language; use plain imperatives only for genuine blockers — exactly as described in the style skill.
+- **Summary**: Write the summary field in the same voice as the inline comments — brief, direct, first-person, conversational.
+
 Reply with **only** a JSON object (no markdown fences, no extra text):
 {
-  "summary": "one paragraph overall verdict",
+  "summary": "one short paragraph in the reviewer's voice",
   "verdict": "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
   "comments": [
-    { "path": "<file>", "line": <number>, "side": "RIGHT", "body": "<comment>" }
+    { "path": "<file>", "line": <number>, "side": "RIGHT", "body": "<comment in reviewer's voice>" }
   ]
 }`
 }
@@ -332,6 +343,7 @@ async function main(): Promise<void> {
 
   process.stderr.write(`Loading skills from ${skillPath}…\n`)
   const systemPrompt = loadSkills(skillPath)
+  console.log('systemPrompt', systemPrompt)
 
   const client = createOctokitClient(githubToken)
 
@@ -346,6 +358,7 @@ async function main(): Promise<void> {
   )
 
   const userPrompt = buildUserPrompt(meta, files, existingComments)
+  console.log('userPrompt', userPrompt)
 
   process.stderr.write('Running LLM review…\n')
   const anthropic = new Anthropic({ apiKey: anthropicKey })
