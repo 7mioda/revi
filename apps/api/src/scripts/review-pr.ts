@@ -71,7 +71,7 @@ interface ExistingComment {
 export interface SkillEntry {
   name: string
   content: string
-  tags: string[]
+  tags?: string[]
 }
 
 const VALID_VERDICTS = new Set(['APPROVE', 'REQUEST_CHANGES', 'COMMENT'])
@@ -102,6 +102,49 @@ export function loadSkills(skillJsonPath: string): string {
   return loadSkillEntries(skillJsonPath)
     .map((s) => s.content)
     .join('\n\n---\n\n')
+}
+
+/**
+ * Builds the full system prompt for the LLM review call.
+ *
+ * Wraps the raw skill content with a strong identity framing and a mandatory
+ * self-verification checklist so the model cannot drift toward generic AI output.
+ *
+ * @param skills - All skill entries (from skill.json + generated_rules).
+ */
+export function buildSystemPrompt(skills: SkillEntry[]): string {
+  const skillsBlock = skills.map((s) => s.content).join('\n\n---\n\n')
+
+  return `# YOUR IDENTITY
+
+You are NOT an AI assistant writing a code review. You ARE a specific software engineer — a real person with a defined voice, opinions, and habits. The skills below are not guidelines to consider; they ARE who you are.
+
+Every word you produce must be indistinguishable from a comment this person actually wrote. If you catch yourself defaulting to polished, thorough, or AI-sounding language, stop and rewrite it.
+
+---
+
+# YOUR SKILLS — READ AND EMBODY EVERY RULE
+
+${skillsBlock}
+
+---
+
+# MANDATORY SELF-CHECK — run this before writing each comment or summary
+
+Before committing any word to output, verify against these rules extracted directly from your skills above:
+
+1. **Length**: Is this comment 1–2 sentences? If it is longer, cut it. Only go longer when an architectural issue genuinely needs more context.
+2. **Tone**: Does it sound like a message sent to a teammate on Slack — casual, direct, zero formality? If it reads like a code review template or documentation, rewrite it.
+3. **Phrasing**:
+   - Suggestions must use softening language: "you can …", "we can …", "maybe …", "I would …", "I think …", "IMHO"
+   - Blockers must be plain imperatives with no hedging: "fix this", "remove this", "undo this"
+4. **Question-first**: If something looks wrong or unusual, ask why before declaring it wrong. ("why not using X here?", "you still need this?", "any specific reason for …?")
+5. **No formatting inside comments**: No bullet points, no headers, no bold/italic. Plain prose or a single short fragment.
+6. **Emoji rules**: 🔥 only for "this should be deleted", 😅 only to soften mild criticism, 🙏 for polite requests. No other emojis.
+7. **No formal language**: Never write "It would be advisable to …", "Please ensure that …", "This approach may lead to …", or any similar phrasing.
+8. **One concern per comment**: State each issue exactly once. If you cannot say it in 1–2 sentences, you are over-explaining.
+
+**If a comment fails any point above, do not include it. Rewrite it until it passes, or drop it.**`
 }
 
 /**
@@ -151,10 +194,9 @@ ${existingSection}
 ## Apply your loaded skills
 
 Your system prompt contains ${skills.length} reviewer-style skill${skills.length === 1 ? '' : 's'}:
-${skills.map((s) => `- **${s.name}** (${s.tags.join(', ')})`).join('\n')}
+${skills.map((s) => `- **${s.name}**${s.tags && s.tags.length > 0 ? ` (${s.tags.join(', ')})` : ''}`).join('\n')}
 
-Every word you write — each inline comment body and the summary — MUST reflect these skills.
-Do not write generic or polished AI feedback. Write exactly as this reviewer would write.
+**MANDATORY — non-negotiable:** Every single word you write — each inline comment body and the summary — MUST sound exactly like this reviewer. Use their vocabulary, tone, cadence, and opinions as described in the skills above. Generic, polished, or AI-sounding feedback is a failure. If a comment does not sound like it was written by this specific reviewer, do not include it.
 
 Reply with **only** a JSON object (no markdown fences, no extra text):
 {
@@ -355,7 +397,7 @@ async function main(): Promise<void> {
 
   process.stderr.write(`Loading skills from ${skillPath}…\n`)
   const skills = loadSkillEntries(skillPath)
-  const systemPrompt = skills.map((s) => s.content).join('\n\n---\n\n')
+  const systemPrompt = buildSystemPrompt(skills)
   process.stderr.write(`  Loaded ${skills.length} skill(s): ${skills.map((s) => s.name).join(', ')}\n`)
 
   const client = createOctokitClient(githubToken)

@@ -7,8 +7,11 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createOctokitClient } from '@revi/octokit'
 import type { OctokitClient } from '@revi/octokit'
 import { Skill } from '../skills/skill.schema.js'
+import moreSkills from './generated_rules.json' with { type: 'json' }
+import rules from './skill.json' with { type: 'json' }
 import type { SkillDocument } from '../skills/skill.schema.js'
 import {
+  buildSystemPrompt,
   buildUserPrompt,
   parseReviewResult,
   mapToGithubReview,
@@ -60,7 +63,7 @@ export class ReviewsService {
       tags: s.tags,
     }))
 
-    const systemPrompt = skills.map((s) => s.content).join('\n\n---\n\n')
+    const systemPrompt = buildSystemPrompt([...rules, ...skills, ...moreSkills])
 
     const githubToken = this.config.get('GITHUB_TOKEN')
     const client = createOctokitClient(githubToken)

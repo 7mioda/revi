@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "start": "tsx src/main.ts",
+    "build": "tsc",
+    "start": "tsc && node dist/main.js",
     "fetch-my-comments": "tsx src/scripts/fetch-my-comments.ts",
     "generate-skill": "tsx src/scripts/generate-skill.ts",
     "review-pr": "tsx src/scripts/review-pr.ts",
@@ -32,6 +33,7 @@
     "@types/supertest": "^7.2.0",
     "supertest": "^7.0.0",
     "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
     "vitest": "^3.0.0"
   }
 }
