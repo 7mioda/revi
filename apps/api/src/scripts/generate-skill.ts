@@ -2,11 +2,13 @@
  * generate-skill.ts
  *
  * One-shot script: reads `apps/api/data.json` (pre-fetched comment corpus),
- * samples the N most-recent comments, calls the Anthropic API to analyse the
- * reviewer's style, and writes the result to `apps/api/output/skill.json`.
+ * samples the N most-recent comments, then runs one Anthropic API call per
+ * skill dimension to build a JSON array of skill objects.
  *
  * Usage:
  *   ANTHROPIC_API_KEY=<key> yarn workspace @revi/api generate-skill
+ *
+ * Output: `apps/api/output/skill.json`  — a SkillOutput[] array
  */
 
 import fs from 'fs'
@@ -19,12 +21,51 @@ import type { MyCommentsOutput } from './fetch-my-comments.js'
 // Types
 // ---------------------------------------------------------------------------
 
-/** The shape written to `output/skill.json`. */
+/** A single generated skill entry written to `output/skill.json`. */
 export interface SkillOutput {
   name: string
   content: string
   tags: string[]
 }
+
+/**
+ * Describes one dimension of skill to extract from the comment corpus.
+ * Each dimension produces one LLM call and one entry in the output array.
+ */
+export interface SkillDimension {
+  /** Unique kebab-case key — used as a fallback name if the LLM omits one. */
+  key: string
+  /** Short description of what this skill should capture, injected into the prompt. */
+  focus: string
+  /** Default tags that will appear on this skill entry. */
+  tags: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Skill dimensions — extend this array to add more skills
+// ---------------------------------------------------------------------------
+
+/** The ordered list of skill dimensions to generate (one LLM call each). */
+export const SKILL_DIMENSIONS: SkillDimension[] = [
+  {
+    key: 'review-style',
+    focus:
+      'communication tone, phrasing of feedback, how suggestions vs. hard requirements are expressed, and any signature phrases or habits',
+    tags: ['style', 'communication', 'code-review'],
+  },
+  {
+    key: 'technical-patterns',
+    focus:
+      'preferred language features, naming conventions, architectural patterns, error handling strategies, and any technology-specific preferences',
+    tags: ['typescript', 'architecture', 'patterns'],
+  },
+  {
+    key: 'testing-philosophy',
+    focus:
+      'how tests are reviewed, expectations around test coverage and structure, opinions on mocking vs. integration tests, and test naming habits',
+    tags: ['testing', 'tdd', 'coverage'],
+  },
+]
 
 // ---------------------------------------------------------------------------
 // Pure helpers (exported for unit testing)
@@ -41,10 +82,14 @@ export function sampleRecentComments(comments: GithubComment[], n: number): Gith
 }
 
 /**
- * Formats a comment sample into an LLM prompt string.
- * The prompt asks Claude to analyse the reviewer's style and return a skill JSON.
+ * Builds a dimension-specific LLM prompt from a comment sample.
+ * The prompt asks Claude to focus only on the dimension's `focus` area
+ * and return a single JSON skill object.
+ *
+ * @param dimension - The skill dimension that scopes what Claude should analyse.
+ * @param comments  - The comment sample to include in the prompt.
  */
-export function buildPrompt(comments: GithubComment[]): string {
+export function buildPrompt(dimension: SkillDimension, comments: GithubComment[]): string {
   const formattedComments = comments
     .map((c) => {
       const header = `[repo: ${c.repoOwner}/${c.repoName} | type: ${c.type} | file: ${c.path ?? 'n/a'}]`
@@ -54,18 +99,15 @@ export function buildPrompt(comments: GithubComment[]): string {
 
   return `You are a code review style analyst. Below are ${comments.length} real pull-request review comments written by a single developer.
 
-Analyse the comments and identify:
-- Tone and communication style (e.g. direct, constructive, questioning)
-- Recurring technical patterns the reviewer focuses on (e.g. naming, error handling, test coverage)
-- How the reviewer phrases suggestions vs. hard requirements
-- Any signature phrases or habits
+Your task is to analyse ONLY the following dimension of their review behaviour:
+**${dimension.focus}**
 
-Then produce a Claude Code skill that encodes this style so an AI can emulate it when doing future PR reviews.
+Based on this dimension, produce a Claude Code skill document that encodes this specific aspect of the reviewer's style so an AI assistant can emulate it when doing future PR code reviews.
 
 Respond with **only** a JSON object (no markdown fences, no extra text):
 {
-  "name": "<kebab-case skill name>",
-  "content": "<full markdown skill document describing the review style>",
+  "name": "<kebab-case skill name reflecting this dimension>",
+  "content": "<full markdown skill document for this dimension>",
   "tags": ["<tag1>", "<tag2>"]
 }
 
@@ -111,6 +153,41 @@ export function parseSkillOutput(text: string): SkillOutput {
   }
 }
 
+/**
+ * Runs one LLM call per dimension (serially) and returns all skill outputs.
+ *
+ * @param client     - Anthropic API client.
+ * @param dimensions - Ordered list of dimensions to generate.
+ * @param comments   - Pre-sampled comment corpus shared across all dimensions.
+ */
+export async function generateAllSkills(
+  client: Anthropic,
+  dimensions: SkillDimension[],
+  comments: GithubComment[],
+): Promise<SkillOutput[]> {
+  const skills: SkillOutput[] = []
+
+  for (const dimension of dimensions) {
+    process.stderr.write(`  Generating skill: ${dimension.key}…\n`)
+    const prompt = buildPrompt(dimension, comments)
+
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    const responseText = message.content
+      .filter((block) => block.type === 'text')
+      .map((block) => (block as { type: 'text'; text: string }).text)
+      .join('')
+
+    skills.push(parseSkillOutput(responseText))
+  }
+
+  return skills
+}
+
 // ---------------------------------------------------------------------------
 // Script entrypoint — only runs when executed directly, not when imported
 // ---------------------------------------------------------------------------
@@ -122,22 +199,23 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  // Resolve data.json relative to the monorepo root (two levels up from apps/api/src/scripts/)
-  const dataPath = path.resolve(
-    path.dirname(new URL(import.meta.url).pathname),
-    '../../../../apps/api/data.json',
-  )
-  const resolvedData = fs.existsSync(dataPath)
-    ? dataPath
-    : path.resolve('data.json')
-
-  if (!fs.existsSync(resolvedData)) {
-    process.stderr.write(`Error: data.json not found. Run fetch-my-comments first.\n`)
+  // Resolve data.json relative to the monorepo root (cwd when run via yarn workspace)
+  const candidates = [
+    path.resolve('data.json'),
+    path.resolve('apps/api/data.json'),
+    path.resolve(
+      path.dirname(new URL(import.meta.url).pathname),
+      '../../../../apps/api/data.json',
+    ),
+  ]
+  const dataPath = candidates.find((p) => fs.existsSync(p))
+  if (!dataPath) {
+    process.stderr.write('Error: data.json not found. Run fetch-my-comments first.\n')
     process.exit(1)
   }
 
-  process.stderr.write(`Reading comments from ${resolvedData}…\n`)
-  const raw = fs.readFileSync(resolvedData, 'utf-8')
+  process.stderr.write(`Reading comments from ${dataPath}…\n`)
+  const raw = fs.readFileSync(dataPath, 'utf-8')
   const data = JSON.parse(raw) as MyCommentsOutput
 
   const SAMPLE_SIZE = 200
@@ -145,32 +223,20 @@ async function main(): Promise<void> {
   process.stderr.write(
     `Sampled ${sample.length} most-recent comments from ${data.totalComments} total.\n`,
   )
+  process.stderr.write(`Generating ${SKILL_DIMENSIONS.length} skills…\n`)
 
-  const prompt = buildPrompt(sample)
-
-  process.stderr.write('Calling Anthropic API…\n')
   const client = new Anthropic({ apiKey })
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
-  })
-
-  const responseText = message.content
-    .filter((block) => block.type === 'text')
-    .map((block) => (block as { type: 'text'; text: string }).text)
-    .join('')
-
-  const skill = parseSkillOutput(responseText)
+  const skills = await generateAllSkills(client, SKILL_DIMENSIONS, sample)
 
   const outputDir = path.resolve('output')
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true })
   }
   const outputPath = path.join(outputDir, 'skill.json')
-  fs.writeFileSync(outputPath, JSON.stringify(skill, null, 2))
+  fs.writeFileSync(outputPath, JSON.stringify(skills, null, 2))
 
-  process.stderr.write(`\nDone. Skill "${skill.name}" written to ${outputPath}\n`)
+  const names = skills.map((s) => s.name).join(', ')
+  process.stderr.write(`\nDone. ${skills.length} skill(s) [${names}] written to ${outputPath}\n`)
 }
 
 // Run only when this file is the entrypoint, not when imported by tests.

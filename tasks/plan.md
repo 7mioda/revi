@@ -356,6 +356,111 @@ yarn workspace @revi/api typecheck   # 0 errors
 
 ---
 
+## Task 11 — apps/api: multi-skill generation (one call per dimension)
+
+Extend `generate-skill.ts` so it produces an **array** of skill objects — one per dimension — instead of a single object. Each skill has a distinct focus and its own set of tags.
+
+### What changes
+
+**Output format** (`output/skill.json`):
+```json
+[
+  { "name": "review-style",        "content": "...", "tags": ["style", "communication"] },
+  { "name": "technical-patterns",  "content": "...", "tags": ["typescript", "architecture"] },
+  { "name": "testing-philosophy",  "content": "...", "tags": ["testing", "coverage"] }
+]
+```
+
+**Skill dimensions** (hardcoded array, easily extensible):
+
+| Dimension key | Focus | Default tags |
+|---|---|---|
+| `review-style` | Tone, communication, phrasing | `["style", "communication", "code-review"]` |
+| `technical-patterns` | Language features, architecture, naming, error handling | `["typescript", "architecture", "patterns"]` |
+| `testing-philosophy` | How tests are reviewed/written, coverage expectations | `["testing", "tdd", "coverage"]` |
+
+### Dependency graph
+
+```
+data.json → sampleRecentComments → [dimension[0], dimension[1], dimension[2]]
+                                        │               │               │
+                                   LLM call #1    LLM call #2    LLM call #3 (serial)
+                                        └───────────────┴───────────────┘
+                                                        ↓
+                                               output/skill.json  (SkillOutput[])
+```
+
+### API changes
+
+```ts
+/** Describes one skill dimension to generate. */
+export interface SkillDimension {
+  /** Unique key — becomes the skill name if the LLM doesn't override it. */
+  key: string
+  /** Short description of what this skill should capture. */
+  focus: string
+  /** Default tags merged into the output entry. */
+  tags: string[]
+}
+
+/** The full list of dimensions to generate (exported for testing). */
+export const SKILL_DIMENSIONS: SkillDimension[]
+
+/** Build a dimension-specific prompt. Replaces the old single buildPrompt. */
+export function buildPrompt(dimension: SkillDimension, comments: GithubComment[]): string
+
+/** Parse a single LLM response → SkillOutput (unchanged contract). */
+export function parseSkillOutput(text: string): SkillOutput
+
+/** Run all dimensions sequentially; returns one SkillOutput per dimension. */
+export async function generateAllSkills(
+  client: Anthropic,
+  dimensions: SkillDimension[],
+  comments: GithubComment[],
+): Promise<SkillOutput[]>
+```
+
+`sampleRecentComments` and `parseSkillOutput` signatures are **unchanged**.
+
+The old `buildPrompt(comments)` (no dimension arg) is replaced by `buildPrompt(dimension, comments)`.
+
+### main() flow
+
+```
+read ANTHROPIC_API_KEY → read data.json → sample 200
+→ generateAllSkills (serial, one API call per dimension)
+→ write output/skill.json  (SkillOutput[])
+```
+
+### Files to modify
+
+| File | Change |
+|---|---|
+| `apps/api/src/scripts/generate-skill.ts` | Add `SkillDimension`, `SKILL_DIMENSIONS`, update `buildPrompt`, add `generateAllSkills`; update `main()` |
+| `apps/api/src/__tests__/generate-skill.test.ts` | Update `buildPrompt` tests (now takes dimension arg); add tests for `generateAllSkills` shape; update `parseSkillOutput` tests (unchanged) |
+
+### Acceptance criteria
+
+1. `SKILL_DIMENSIONS` is an exported array with at least 3 entries, each with `key`, `focus`, `tags`
+2. `buildPrompt(dimension, comments)` — prompt body contains the dimension's `focus` text
+3. `buildPrompt(dimension, [])` — still returns a non-empty string containing "review"
+4. `parseSkillOutput` tests still pass (no signature change)
+5. `sampleRecentComments` tests still pass (no change)
+6. `generateAllSkills` with a mock Anthropic client that returns valid JSON → returns array of length equal to `dimensions.length`
+7. `ANTHROPIC_API_KEY=<key> yarn workspace @revi/api generate-skill` writes `output/skill.json` as a JSON **array**
+8. `yarn workspace @revi/api typecheck` passes with 0 errors
+
+### Verification
+
+```sh
+yarn workspace @revi/api test       # all tests green (including updated ones)
+yarn workspace @revi/api typecheck  # 0 errors
+ANTHROPIC_API_KEY=<key> yarn workspace @revi/api generate-skill
+cat apps/api/output/skill.json      # JSON array with 3 objects, each has name/content/tags
+```
+
+---
+
 ## Hard rules (from CLAUDE.md)
 
 1. No `any`. No `!` without an inline comment explaining why.

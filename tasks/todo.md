@@ -28,13 +28,14 @@
 
 ## Phase 4: Skill generation
 
-- [ ] **Task 10** — apps/api: generate-skill script
-  - Install `@anthropic-ai/sdk`
-  - Add `"generate-skill": "tsx src/scripts/generate-skill.ts"` to scripts
-  - Create pure helpers: `sampleRecentComments`, `buildPrompt`, `parseSkillOutput`
-  - Write failing tests for all three helpers (RED)
-  - Implement helpers (GREEN)
-  - Implement `main()`: read data.json → sample → LLM call → write output/skill.json
-  - Verify: `yarn workspace @revi/api test` passes
-  - Verify: `ANTHROPIC_API_KEY=<key> yarn workspace @revi/api generate-skill` writes skill.json
+- [x] **Task 10** — apps/api: generate-skill script (single skill, one LLM call)
+
+- [ ] **Task 11** — apps/api: multi-skill generation (one call per dimension)
+  - Add `SkillDimension` type + `SKILL_DIMENSIONS` array (style, technical-patterns, testing)
+  - Update `buildPrompt(dimension, comments)` — dimension-specific focused prompts
+  - Add `generateAllSkills(client, dimensions, comments)` — serial LLM calls
+  - Update `main()` to call `generateAllSkills` and write `SkillOutput[]` to `skill.json`
+  - Update tests: new `buildPrompt` signature, `generateAllSkills` with mock Anthropic client
+  - Verify: `yarn workspace @revi/api test` all green
+  - Verify: script writes `skill.json` as a JSON array with 3 entries (name/content/tags each)
   - Verify: `yarn workspace @revi/api typecheck` passes
