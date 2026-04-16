@@ -28,9 +28,8 @@ export function HeroSection() {
             className="max-w-4xl text-[40px] font-normal leading-[1.05] text-[#0a0908] sm:text-[56px] lg:text-[72px]"
             style={{ letterSpacing: "-0.02em" }}
           >
-            Every engineer <em className="font-serif italic" style={{ fontWeight: 100 }}>has a philosophy.</em>
+            Your reviews,<br /> Your philosophy,<br /> <em className="font-serif italic" style={{ fontWeight: 100 }}>Zero time.</em>
             <br />
-            Make sure it&apos;s never lost.
           </h1>
 
           {/* Subtitle */}
