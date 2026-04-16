@@ -10,3 +10,4 @@ dist
 .env
 .env.*
 .DS_Store
+apps/api/output/
