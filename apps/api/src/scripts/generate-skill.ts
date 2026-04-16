@@ -11,6 +11,7 @@
  * Output: `apps/api/output/skill.json`  — a SkillOutput[] array
  */
 
+import 'dotenv/config'
 import fs from 'fs'
 import path from 'path'
 import Anthropic from '@anthropic-ai/sdk'
