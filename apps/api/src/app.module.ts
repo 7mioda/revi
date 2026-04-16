@@ -1,8 +1,11 @@
 import 'reflect-metadata'
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { MongooseModule } from '@nestjs/mongoose'
 import { validateEnv } from './config.js'
+import type { Env } from './config.js'
 import { GithubModule } from './github/github.module.js'
+import { MeModule } from './me/me.module.js'
 
 /**
  * Root application module.
@@ -16,7 +19,14 @@ import { GithubModule } from './github/github.module.js'
       isGlobal: true,
       validate: validateEnv,
     }),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Env, true>) => ({
+        uri: config.get('MONGODB_URI'),
+      }),
+    }),
     GithubModule,
+    MeModule,
   ],
 })
 export class AppModule {}
