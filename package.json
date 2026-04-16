@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/*"
-  ]
+    "packages/*",
+    "apps/*"
+  ],
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
 }

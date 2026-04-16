@@ -1,0 +1,27 @@
+{
+  "name": "@revi/octokit",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@octokit/plugin-paginate-rest": "^11.0.0",
+    "@octokit/plugin-retry": "^7.0.0",
+    "@octokit/plugin-throttling": "^9.0.0",
+    "@octokit/rest": "^21.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.0"
+  }
+}
