@@ -17,6 +17,7 @@ The repo was initialized with Yarn PnP (`.pnp.cjs` exists) but CLAUDE.md require
 Root monorepo config (.yarnrc.yml, root package.json, tsconfig.base.json)
     └── packages/octokit   (zero internal deps — plain TS library)
             └── apps/api   (imports @revi/octokit — NestJS app)
+                    └── apps/web  (Next.js 15 + Tailwind CSS v4 — standalone tsconfig)
 ```
 
 ---
@@ -193,6 +194,165 @@ curl -X POST http://localhost:3000/github/octocat/comments \
 ```
 
 Both must return well-formed JSON matching the specified response shapes.
+
+---
+
+## Task 7 — apps/api: fetch-my-comments CLI script
+
+**Files to create:**
+- `apps/api/src/scripts/fetch-my-comments.ts` — CLI that:
+  - Reads `GITHUB_TOKEN` from env
+  - Calls `getAuthenticatedUser` → `listAccessibleRepos` → `fetchAllComments` per repo
+  - Filters to only the authenticated user's own comments
+  - Writes `apps/api/output/my-comments.json`
+
+**Acceptance criteria:**
+- `GITHUB_TOKEN=<pat> yarn workspace @revi/api fetch-my-comments` writes output file
+- Output schema matches `data.json` (user, fetchedAt, totalRepos, totalComments, comments[])
+
+---
+
+## Task 8 — apps/api: POST /me/comments → MongoDB
+
+**Files to create:**
+- `apps/api/src/me/comment.schema.ts` — Mongoose schema mirroring `GithubComment` + `githubId` unique index
+- `apps/api/src/me/me.service.ts` — `fetchAndSave(token)`: getAuthenticatedUser → listAccessibleRepos → fetchAllComments (serial) → filter mine → upsert by githubId
+- `apps/api/src/me/me.controller.ts` — `POST /me/comments` with `{ token }` body
+- `apps/api/src/me/me.module.ts`
+- Update `apps/api/src/config.ts` — add `MONGODB_URI` required field
+- Update `apps/api/src/app.module.ts` — add `MongooseModule.forRootAsync`
+
+**Acceptance criteria:**
+- `POST /me/comments { "token": "<pat>" }` returns `{ saved, total }` counts
+- Re-running is idempotent (upsert on githubId)
+
+---
+
+## Task 9 — apps/web: Next.js 15 scaffold
+
+**Files to create:**
+- `apps/web/package.json` — `@revi/web`, Next 15, React 19, Tailwind CSS v4
+- `apps/web/tsconfig.json` — standalone (module: esnext, moduleResolution: bundler, jsx: preserve)
+- `apps/web/next.config.ts` — minimal empty config
+- `apps/web/postcss.config.mjs` — `@tailwindcss/postcss` plugin
+- `apps/web/src/app/globals.css` — `@import "tailwindcss"`
+- `apps/web/src/app/layout.tsx` — root layout
+- `apps/web/src/app/page.tsx` — placeholder "Revi — coming soon"
+
+**Acceptance criteria:**
+- `yarn workspace @revi/web typecheck` passes (0 errors)
+- `yarn workspace @revi/web dev` starts on port 3001
+
+✅ **COMPLETE**
+
+---
+
+## Task 10 — apps/api: generate-skill script
+
+Generate a Claude Code skill JSON from the user's real PR review comments via LLM.
+
+### What it does
+
+1. Reads `apps/api/data.json` (pre-fetched comment corpus)
+2. Samples the **N most-recent comments** (default: 200) to stay within context limits
+3. Calls the **Anthropic API** (Claude) with a structured prompt asking it to:
+   - Identify the reviewer's tone, recurring patterns, and focus areas
+   - Produce a Claude Code skill that encodes this style for future PR reviews
+4. Writes `apps/api/output/skill.json`:
+   ```json
+   {
+     "name": "string",
+     "content": "string (markdown skill body)",
+     "tags": ["string"]
+   }
+   ```
+
+### Dependency graph
+
+```
+apps/api/data.json   →   generate-skill.ts   →   Anthropic API   →   output/skill.json
+```
+
+### Files to create
+
+| File | Purpose |
+|---|---|
+| `apps/api/src/scripts/generate-skill.ts` | Main script |
+| `apps/api/src/__tests__/generate-skill.test.ts` | Unit tests for pure helpers |
+
+### Key functions (pure — testable without network)
+
+```ts
+/** Pick the N comments with the most-recent createdAt, preserving order. */
+export function sampleRecentComments(comments: GithubComment[], n: number): GithubComment[]
+
+/** Build the LLM prompt string from a comment sample. */
+export function buildPrompt(comments: GithubComment[]): string
+
+/** Parse the LLM response text into a SkillOutput. */
+export function parseSkillOutput(text: string): SkillOutput
+
+type SkillOutput = { name: string; content: string; tags: string[] }
+```
+
+The `main()` function:
+- Reads `ANTHROPIC_API_KEY` from env (exit 1 if missing)
+- Reads `data.json` relative to script (default: `apps/api/data.json`)
+- Calls `sampleRecentComments(comments, 200)`
+- Sends one `messages.create` call (`claude-sonnet-4-6`, `max_tokens: 4096`)
+- Calls `parseSkillOutput` on the response
+- Writes `apps/api/output/skill.json`
+
+### Prompt design
+
+The system prompt instructs Claude to act as a code review style analyst.
+The user message includes:
+- Brief preamble (username, total count, sample size)
+- Each sampled comment formatted as:
+  ```
+  [repo: owner/name | type: pr_review_comment | file: path/to/file]
+  <body>
+  ```
+- Instruction to reply with JSON only:
+  ```json
+  { "name": "...", "content": "...", "tags": [...] }
+  ```
+
+The `content` field should be a markdown skill document that describes the reviewer's style
+so Claude can emulate it when doing PR reviews.
+
+### New dependency
+
+```
+@anthropic-ai/sdk
+```
+
+Added to `apps/api/package.json`.
+
+### New script in package.json
+
+```json
+"generate-skill": "tsx src/scripts/generate-skill.ts"
+```
+
+### Acceptance criteria
+
+1. `sampleRecentComments(comments, 200)` returns exactly 200 items (or all if fewer), sorted newest-first
+2. `buildPrompt([])` returns a non-empty string containing the word "review"
+3. `parseSkillOutput(validJson)` returns typed `SkillOutput` with name, content, tags
+4. `parseSkillOutput(invalidJson)` throws a descriptive error
+5. `ANTHROPIC_API_KEY=<key> yarn workspace @revi/api generate-skill` writes `output/skill.json`
+6. `yarn workspace @revi/api typecheck` passes with 0 errors
+
+### Verification
+
+```sh
+yarn install   # fetches @anthropic-ai/sdk
+yarn workspace @revi/api test   # pure helper tests pass
+ANTHROPIC_API_KEY=<key> yarn workspace @revi/api generate-skill
+cat apps/api/output/skill.json   # valid JSON with name/content/tags
+yarn workspace @revi/api typecheck   # 0 errors
+```
 
 ---
 

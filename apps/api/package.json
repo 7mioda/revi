@@ -5,10 +5,12 @@
   "scripts": {
     "start": "node --experimental-transform-types src/main.ts",
     "fetch-my-comments": "tsx src/scripts/fetch-my-comments.ts",
+    "generate-skill": "tsx src/scripts/generate-skill.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

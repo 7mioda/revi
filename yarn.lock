@@ -959,6 +959,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@revi/api@workspace:apps/api"
   dependencies:
+    "@anthropic-ai/sdk": ^0.52.0
     "@nestjs/common": ^11.0.0
     "@nestjs/config": ^4.0.0
     "@nestjs/core": ^11.0.0
