@@ -1,0 +1,172 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Inter", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fragment Mono", "Geist Mono", ui-monospace, monospace;
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Lyse dark theme — always dark */
+:root {
+  --background: #0a0908;
+  --foreground: #ffffff;
+  --card: #141414;
+  --card-foreground: #ffffff;
+  --popover: #141414;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #0a0908;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1a1a;
+  --muted-foreground: #7e7e7e;
+  --accent: #0099ff;
+  --accent-foreground: #ffffff;
+  --destructive: #f14443;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: rgba(255, 255, 255, 0.12);
+  --radius: 0.75rem;
+
+  /* Lyse-specific tokens */
+  --lyse-bg: #0a0908;
+  --lyse-bg-dark: #0a0908;
+  --lyse-surface: #141414;
+  --lyse-surface-light: #1a1a1a;
+  --lyse-border: rgba(255, 255, 255, 0.06);
+  --lyse-border-medium: rgba(255, 255, 255, 0.12);
+  --lyse-border-strong: rgba(255, 255, 255, 0.24);
+  --lyse-text: #ffffff;
+  --lyse-text-secondary: rgba(255, 255, 255, 0.5);
+  --lyse-text-muted: rgba(255, 255, 255, 0.32);
+  --lyse-blue: #0099ff;
+  --lyse-green: #00ca52;
+  --lyse-orange: #ff6a00;
+  --lyse-red: #f14443;
+  --lyse-green-bg: rgba(0, 202, 82, 0.04);
+  --lyse-orange-bg: rgba(255, 106, 0, 0.04);
+  --lyse-red-bg: rgba(241, 68, 67, 0.04);
+}
+
+@layer base {
+  * {
+    @apply border-[var(--lyse-border)] outline-ring/50;
+  }
+  body {
+    background: #0a0908;
+    color: var(--lyse-text);
+    font-family: var(--font-sans);
+  }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Utility classes matching Lyse site */
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.5) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+  }
+
+  .glass-card-hover {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    transition: border-color 0.2s ease-in-out;
+  }
+
+  .glass-card-hover:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .fade-mask-bottom {
+    mask-image: linear-gradient(#000 67%, transparent 100%);
+    -webkit-mask-image: linear-gradient(#000 67%, transparent 100%);
+  }
+
+  .radial-fade {
+    mask-image: radial-gradient(34% 50%, transparent 45%, #000 100%);
+    -webkit-mask-image: radial-gradient(34% 50%, transparent 45%, #000 100%);
+  }
+}
+
+/* Shimmer text animation */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.5) 0%,
+    rgba(255,255,255,1) 50%,
+    rgba(255,255,255,0.5) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Scrollbar hiding for horizontal scrolls */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
