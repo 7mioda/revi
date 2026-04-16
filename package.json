@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "api": "yarn workspace @revi/api",
+    "start:dev": "yarn workspace @revi/web dev",
+    "start:landing:dev": "yarn workspace @revi/landing dev",
     "filter": "yarn workspace filter-comments start"
   },
   "workspaces": [

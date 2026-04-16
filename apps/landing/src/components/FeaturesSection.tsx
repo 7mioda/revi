@@ -5,26 +5,26 @@ export function FeaturesSection() {
     <section
       id="features"
       className="w-full"
-      style={{ backgroundColor: "#0a0908" }}
+      style={{ backgroundColor: "#fafaf9" }}
     >
       <div className="mx-auto max-w-[1200px] px-5 py-20">
         {/* Section header */}
         <div className="mb-12 flex flex-col items-center text-center">
           <span
             className="mb-4 text-[13px] font-medium uppercase tracking-widest"
-            style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            style={{ color: "rgba(0, 0, 0, 0.5)" }}
           >
             Features
           </span>
           <h2
-            className="mb-4 text-[32px] font-semibold leading-tight text-white sm:text-[44px]"
+            className="mb-4 text-[32px] font-semibold leading-tight text-[#0a0908] sm:text-[44px]"
             style={{ letterSpacing: "-0.02em" }}
           >
             Everything a PM does. Nothing a PM costs.
           </h2>
           <p
             className="max-w-lg text-[15px] leading-relaxed"
-            style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            style={{ color: "rgba(0, 0, 0, 0.5)" }}
           >
             Lyse handles the process work. Your team keeps the decisions
           </p>
@@ -36,31 +36,31 @@ export function FeaturesSection() {
           <div
             className="col-span-1 overflow-hidden rounded-xl md:col-span-2"
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.04)",
+              backgroundColor: "rgba(0, 0, 0, 0.03)",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
             }}
           >
             <div className="p-6">
               <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Before card */}
-                <div className="rounded-lg p-4" style={{ backgroundColor: "rgb(13, 13, 13)" }}>
+                <div className="rounded-lg p-4" style={{ backgroundColor: "rgb(245, 245, 244)" }}>
                   <BeforeTag />
                   <div className="mt-3">
                     <div className="mb-2 flex items-center gap-2">
                       <PriorityTag label="Hight" color="red" />
                       <span
                         className="text-[12px]"
-                        style={{ color: "rgba(255, 255, 255, 0.32)" }}
+                        style={{ color: "rgba(0, 0, 0, 0.32)" }}
                       >
                         26 February 2026
                       </span>
                     </div>
-                    <h4 className="mb-1 text-[14px] font-medium text-white">
+                    <h4 className="mb-1 text-[14px] font-medium text-[#0a0908]">
                       User auth flow
                     </h4>
                     <p
                       className="text-[13px] leading-relaxed"
-                      style={{ color: "rgba(255, 255, 255, 0.5)" }}
+                      style={{ color: "rgba(0, 0, 0, 0.5)" }}
                     >
                       Fix the login thing Thomas mentioned in standup. Ask him
                       for details before starting.
@@ -69,24 +69,24 @@ export function FeaturesSection() {
                 </div>
 
                 {/* After card */}
-                <div className="rounded-lg p-4" style={{ backgroundColor: "rgb(13, 13, 13)" }}>
+                <div className="rounded-lg p-4" style={{ backgroundColor: "rgb(245, 245, 244)" }}>
                   <AfterTag />
                   <div className="mt-3">
                     <div className="mb-2 flex items-center gap-2">
                       <PriorityTag label="High" color="orange" />
                       <span
                         className="text-[12px]"
-                        style={{ color: "rgba(255, 255, 255, 0.32)" }}
+                        style={{ color: "rgba(0, 0, 0, 0.32)" }}
                       >
                         26 February 2026
                       </span>
                     </div>
-                    <h4 className="mb-1 text-[14px] font-medium text-white">
+                    <h4 className="mb-1 text-[14px] font-medium text-[#0a0908]">
                       User auth flow
                     </h4>
                     <p
                       className="text-[13px] leading-relaxed"
-                      style={{ color: "rgba(255, 255, 255, 0.5)" }}
+                      style={{ color: "rgba(0, 0, 0, 0.5)" }}
                     >
                       Implement OAuth2 PKCE flow for web client. Add session
                       refresh with 7-day rolling window. Handle edge case:
@@ -96,12 +96,12 @@ export function FeaturesSection() {
                 </div>
               </div>
 
-              <h3 className="mb-2 text-[20px] font-medium text-white">
+              <h3 className="mb-2 text-[20px] font-medium text-[#0a0908]">
                 Spec writing
               </h3>
               <p
                 className="max-w-2xl text-[14px] leading-[22px]"
-                style={{ color: "rgba(255, 255, 255, 0.5)" }}
+                style={{ color: "rgba(0, 0, 0, 0.5)" }}
               >
                 Lyse drafts specs from a Slack thread, a Notion doc, or a
                 Linear issue. With context from your past decisions built in.
@@ -114,8 +114,8 @@ export function FeaturesSection() {
           <div
             className="overflow-hidden rounded-xl"
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.04)",
+              backgroundColor: "rgba(0, 0, 0, 0.03)",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
             }}
           >
             <div className="p-6">
@@ -138,12 +138,12 @@ export function FeaturesSection() {
                 />
               </div>
 
-              <h3 className="mb-2 text-[20px] font-medium text-white">
+              <h3 className="mb-2 text-[20px] font-medium text-[#0a0908]">
                 Backlog prioritization
               </h3>
               <p
                 className="text-[14px] leading-[22px]"
-                style={{ color: "rgba(255, 255, 255, 0.5)" }}
+                style={{ color: "rgba(0, 0, 0, 0.5)" }}
               >
                 Lyse reads your backlog and your product context. Proposes a
                 prioritized sprint with reasoning. You approve, adjust, or
@@ -156,20 +156,20 @@ export function FeaturesSection() {
           <div
             className="overflow-hidden rounded-xl"
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.04)",
+              backgroundColor: "rgba(0, 0, 0, 0.03)",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
             }}
           >
             <div className="p-6">
               {/* Decision log */}
-              <div className="mb-6 rounded-lg p-4" style={{ backgroundColor: "rgb(13, 13, 13)" }}>
+              <div className="mb-6 rounded-lg p-4" style={{ backgroundColor: "rgb(245, 245, 244)" }}>
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[14px] font-medium text-white">
+                  <span className="text-[14px] font-medium text-[#0a0908]">
                     Decision log
                   </span>
                   <span
                     className="text-[12px]"
-                    style={{ color: "rgba(255, 255, 255, 0.32)" }}
+                    style={{ color: "rgba(0, 0, 0, 0.32)" }}
                   >
                     247 PM decisions documented
                   </span>
@@ -181,12 +181,12 @@ export function FeaturesSection() {
                 </div>
               </div>
 
-              <h3 className="mb-2 text-[20px] font-medium text-white">
+              <h3 className="mb-2 text-[20px] font-medium text-[#0a0908]">
                 Decision memory
               </h3>
               <p
                 className="text-[14px] leading-[22px]"
-                style={{ color: "rgba(255, 255, 255, 0.5)" }}
+                style={{ color: "rgba(0, 0, 0, 0.5)" }}
               >
                 Every decision Lyse makes is timestamped, explained, and linked
                 to an outcome. 500 PM decisions in 6 months. Your institutional
@@ -199,8 +199,8 @@ export function FeaturesSection() {
           <div
             className="col-span-1 overflow-hidden rounded-xl md:col-span-2"
             style={{
-              backgroundColor: "rgba(255, 255, 255, 0.04)",
-              border: "1px solid rgba(255, 255, 255, 0.04)",
+              backgroundColor: "rgba(0, 0, 0, 0.03)",
+              border: "1px solid rgba(0, 0, 0, 0.06)",
             }}
           >
             <div className="p-6">
@@ -213,12 +213,12 @@ export function FeaturesSection() {
                 <ToolBadge name="GitHub" />
               </div>
 
-              <h3 className="mb-2 text-[20px] font-medium text-white">
+              <h3 className="mb-2 text-[20px] font-medium text-[#0a0908]">
                 Cross-tool synthesis
               </h3>
               <p
                 className="max-w-2xl text-[14px] leading-[22px]"
-                style={{ color: "rgba(255, 255, 255, 0.5)" }}
+                style={{ color: "rgba(0, 0, 0, 0.5)" }}
               >
                 Linear knows Linear. Slack knows Slack. Lyse knows how they
                 connect. &ldquo;Why did we build this?&rdquo; — Lyse answers,
@@ -239,8 +239,8 @@ function BeforeTag() {
     <span
       className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium"
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.06)",
-        color: "rgba(255, 255, 255, 0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.06)",
+        color: "rgba(0, 0, 0, 0.5)",
       }}
     >
       Before
@@ -270,9 +270,9 @@ function PriorityTag({
   color: "red" | "orange" | "green";
 }) {
   const colorMap = {
-    red: { bg: "rgba(241, 68, 67, 0.04)", text: "rgb(241, 68, 67)" },
-    orange: { bg: "rgba(255, 106, 0, 0.04)", text: "rgb(255, 106, 0)" },
-    green: { bg: "rgba(0, 202, 82, 0.04)", text: "rgb(0, 202, 82)" },
+    red: { bg: "rgba(241, 68, 67, 0.08)", text: "rgb(241, 68, 67)" },
+    orange: { bg: "rgba(255, 106, 0, 0.08)", text: "rgb(255, 106, 0)" },
+    green: { bg: "rgba(0, 202, 82, 0.08)", text: "rgb(0, 202, 82)" },
   };
   const c = colorMap[color];
   return (
@@ -300,11 +300,11 @@ function BacklogItem({
         "flex items-center justify-between rounded-lg px-4 py-3"
       )}
       style={{
-        backgroundColor: "rgb(13, 13, 13)",
-        border: "1px solid rgba(255, 255, 255, 0.04)",
+        backgroundColor: "rgb(245, 245, 244)",
+        border: "1px solid rgba(0, 0, 0, 0.06)",
       }}
     >
-      <span className="text-[14px] text-white">{title}</span>
+      <span className="text-[14px] text-[#0a0908]">{title}</span>
       <PriorityTag label={tag} color={color} />
     </div>
   );
@@ -315,8 +315,8 @@ function LogEntry({ text }: { text: string }) {
     <div
       className="rounded px-3 py-2 font-mono text-[12px]"
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.04)",
-        color: "rgba(255, 255, 255, 0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.04)",
+        color: "rgba(0, 0, 0, 0.5)",
       }}
     >
       {text}
@@ -329,11 +329,11 @@ function ToolBadge({ name }: { name: string }) {
     <div
       className="flex items-center gap-2 rounded-lg px-4 py-2"
       style={{
-        backgroundColor: "rgb(13, 13, 13)",
-        border: "1px solid rgba(255, 255, 255, 0.06)",
+        backgroundColor: "rgb(245, 245, 244)",
+        border: "1px solid rgba(0, 0, 0, 0.06)",
       }}
     >
-      <span className="text-[13px] font-medium text-white">{name}</span>
+      <span className="text-[13px] font-medium text-[#0a0908]">{name}</span>
     </div>
   );
 }
@@ -342,7 +342,7 @@ function ConnectorLine() {
   return (
     <div
       className="h-px w-8"
-      style={{ backgroundColor: "rgba(255, 255, 255, 0.12)" }}
+      style={{ backgroundColor: "rgba(0, 0, 0, 0.12)" }}
     />
   );
 }

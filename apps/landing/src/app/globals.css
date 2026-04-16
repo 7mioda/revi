@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -48,46 +47,46 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Lyse dark theme — always dark */
+/* Lyse light theme */
 :root {
-  --background: #0a0908;
-  --foreground: #ffffff;
-  --card: #141414;
-  --card-foreground: #ffffff;
-  --popover: #141414;
-  --popover-foreground: #ffffff;
-  --primary: #ffffff;
-  --primary-foreground: #0a0908;
-  --secondary: #1a1a1a;
-  --secondary-foreground: #ffffff;
-  --muted: #1a1a1a;
+  --background: #fafaf9;
+  --foreground: #0a0908;
+  --card: #f0f0ef;
+  --card-foreground: #0a0908;
+  --popover: #f0f0ef;
+  --popover-foreground: #0a0908;
+  --primary: #0a0908;
+  --primary-foreground: #fafaf9;
+  --secondary: #e8e8e7;
+  --secondary-foreground: #0a0908;
+  --muted: #e8e8e7;
   --muted-foreground: #7e7e7e;
   --accent: #0099ff;
-  --accent-foreground: #ffffff;
+  --accent-foreground: #0a0908;
   --destructive: #f14443;
-  --border: rgba(255, 255, 255, 0.06);
-  --input: rgba(255, 255, 255, 0.06);
-  --ring: rgba(255, 255, 255, 0.12);
+  --border: rgba(0, 0, 0, 0.06);
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: rgba(0, 0, 0, 0.12);
   --radius: 0.75rem;
 
   /* Lyse-specific tokens */
-  --lyse-bg: #0a0908;
-  --lyse-bg-dark: #0a0908;
-  --lyse-surface: #141414;
-  --lyse-surface-light: #1a1a1a;
-  --lyse-border: rgba(255, 255, 255, 0.06);
-  --lyse-border-medium: rgba(255, 255, 255, 0.12);
-  --lyse-border-strong: rgba(255, 255, 255, 0.24);
-  --lyse-text: #ffffff;
-  --lyse-text-secondary: rgba(255, 255, 255, 0.5);
-  --lyse-text-muted: rgba(255, 255, 255, 0.32);
+  --lyse-bg: #fafaf9;
+  --lyse-bg-dark: #fafaf9;
+  --lyse-surface: #f0f0ef;
+  --lyse-surface-light: #e8e8e7;
+  --lyse-border: rgba(0, 0, 0, 0.06);
+  --lyse-border-medium: rgba(0, 0, 0, 0.12);
+  --lyse-border-strong: rgba(0, 0, 0, 0.24);
+  --lyse-text: #0a0908;
+  --lyse-text-secondary: rgba(0, 0, 0, 0.5);
+  --lyse-text-muted: rgba(0, 0, 0, 0.32);
   --lyse-blue: #0099ff;
   --lyse-green: #00ca52;
   --lyse-orange: #ff6a00;
   --lyse-red: #f14443;
-  --lyse-green-bg: rgba(0, 202, 82, 0.04);
-  --lyse-orange-bg: rgba(255, 106, 0, 0.04);
-  --lyse-red-bg: rgba(241, 68, 67, 0.04);
+  --lyse-green-bg: rgba(0, 202, 82, 0.06);
+  --lyse-orange-bg: rgba(255, 106, 0, 0.06);
+  --lyse-red-bg: rgba(241, 68, 67, 0.06);
 }
 
 @layer base {
@@ -95,7 +94,7 @@
     @apply border-[var(--lyse-border)] outline-ring/50;
   }
   body {
-    background: #0a0908;
+    background: #fafaf9;
     color: var(--lyse-text);
     font-family: var(--font-sans);
   }
@@ -108,27 +107,27 @@
 /* Utility classes matching Lyse site */
 @layer utilities {
   .text-gradient {
-    background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.5) 100%);
+    background: linear-gradient(180deg, #0a0908 0%, rgba(10,9,8,0.5) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .glass-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 12px;
   }
 
   .glass-card-hover {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 12px;
     transition: border-color 0.2s ease-in-out;
   }
 
   .glass-card-hover:hover {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(0, 0, 0, 0.12);
   }
 
   .fade-mask-bottom {
@@ -151,9 +150,9 @@
 .text-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0.5) 0%,
-    rgba(255,255,255,1) 50%,
-    rgba(255,255,255,0.5) 100%
+    rgba(10,9,8,0.5) 0%,
+    rgba(10,9,8,1) 50%,
+    rgba(10,9,8,0.5) 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;

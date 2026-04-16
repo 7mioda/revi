@@ -25,6 +25,11 @@ const fragmentMono = Fragment_Mono({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/logo-revi.svg",
+    shortcut: "/logo-revi.svg",
+    apple: "/logo-revi.svg",
+  },
   title: "Lyse – The #1 AI assistant for tasks",
   description:
     "The PM your team never hired. Lyse handles spec writing, backlog prioritization, and decision logging so your engineering team can focus on building.",
@@ -44,9 +49,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} ${fragmentMono.variable} dark`}
+      className={`${inter.variable} ${geistSans.variable} ${geistMono.variable} ${fragmentMono.variable}`}
     >
-      <body className="min-h-screen bg-[#0a0908] text-white antialiased">
+      <body className="min-h-screen bg-[#fafaf9] text-[#0a0908] antialiased">
         {children}
       </body>
     </html>

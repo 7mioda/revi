@@ -43,19 +43,19 @@ export function FAQSection() {
     <section
       id="faq"
       className="w-full"
-      style={{ backgroundColor: "#0a0908" }}
+      style={{ backgroundColor: "#fafaf9" }}
     >
       <div className="mx-auto max-w-[800px] px-5 py-20">
         {/* Section header */}
         <div className="mb-12 flex flex-col items-center text-center">
           <span
             className="mb-4 text-[13px] font-medium uppercase tracking-widest"
-            style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            style={{ color: "rgba(0, 0, 0, 0.5)" }}
           >
             FAQ
           </span>
           <h2
-            className="mb-4 text-[32px] font-semibold leading-tight text-white sm:text-[44px]"
+            className="mb-4 text-[32px] font-semibold leading-tight text-[#0a0908] sm:text-[44px]"
             style={{ letterSpacing: "-0.02em" }}
           >
             Everything you
@@ -64,27 +64,27 @@ export function FAQSection() {
           </h2>
           <p
             className="text-[15px] leading-relaxed"
-            style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            style={{ color: "rgba(0, 0, 0, 0.5)" }}
           >
             Everything teams ask before getting started.
           </p>
         </div>
 
         {/* FAQ items */}
-        <div className="divide-y" style={{ borderColor: "rgba(255, 255, 255, 0.04)" }}>
+        <div className="divide-y" style={{ borderColor: "rgba(0, 0, 0, 0.06)" }}>
           {faqItems.map((item, i) => {
             const isOpen = openIndex === i;
             return (
               <div
                 key={i}
-                style={{ borderColor: "rgba(255, 255, 255, 0.04)" }}
+                style={{ borderColor: "rgba(0, 0, 0, 0.06)" }}
               >
                 <button
                   type="button"
                   className="flex w-full items-center justify-between py-5 text-left"
                   onClick={() => setOpenIndex(isOpen ? null : i)}
                 >
-                  <span className="pr-4 text-[15px] font-medium text-white">
+                  <span className="pr-4 text-[15px] font-medium text-[#0a0908]">
                     {item.question}
                   </span>
                   <span
@@ -92,7 +92,7 @@ export function FAQSection() {
                       "shrink-0 text-[20px] transition-transform duration-200",
                       isOpen && "rotate-45"
                     )}
-                    style={{ color: "rgba(255, 255, 255, 0.5)" }}
+                    style={{ color: "rgba(0, 0, 0, 0.5)" }}
                   >
                     +
                   </span>

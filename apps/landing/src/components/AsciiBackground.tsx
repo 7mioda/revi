@@ -184,11 +184,11 @@ export function AsciiBackground({ className }: { className?: string }) {
           const vFade = nv > 0.9 ? 1 - (nv - 0.9) / 0.1 : 1;
 
           // Strong alpha — wave peaks very visible, troughs dim but present
-          const alpha = (0.02 + corrected * 0.12) * vFade;
+          const alpha = (0.03 + corrected * 0.18) * vFade;
 
           if (alpha < 0.005) continue;
 
-          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+          ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
           ctx.fillText(char, x, y);
         }
       }

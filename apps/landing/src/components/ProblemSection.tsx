@@ -18,7 +18,7 @@ const pills = [
 
 export function ProblemSection() {
   return (
-    <section className="w-full" style={{ backgroundColor: "#0a0908" }}>
+    <section className="w-full" style={{ backgroundColor: "#fafaf9" }}>
       <div
         className={cn(
           "mx-auto flex flex-col items-center text-center",
@@ -29,7 +29,7 @@ export function ProblemSection() {
         {/* Section label */}
         <p
           className="mb-4 text-[13px] font-medium uppercase tracking-widest"
-          style={{ color: "rgba(255, 255, 255, 0.5)" }}
+          style={{ color: "rgba(0, 0, 0, 0.5)" }}
         >
           Problem
         </p>
@@ -37,7 +37,7 @@ export function ProblemSection() {
         {/* Heading */}
         <h2
           className={cn(
-            "mb-4 font-semibold leading-tight text-white",
+            "mb-4 font-semibold leading-tight text-[#0a0908]",
             "text-[32px] sm:text-[44px]"
           )}
           style={{ letterSpacing: "-0.02em" }}
@@ -50,7 +50,7 @@ export function ProblemSection() {
         {/* Subtext */}
         <p
           className="mb-12 max-w-md text-[15px] leading-relaxed"
-          style={{ color: "rgba(255, 255, 255, 0.5)" }}
+          style={{ color: "rgba(0, 0, 0, 0.5)" }}
         >
           This is PM work falling on engineering.
           <br />
@@ -63,14 +63,14 @@ export function ProblemSection() {
           <div
             className="pointer-events-none absolute inset-x-0 top-0 z-10 h-8"
             style={{
-              background: "linear-gradient(to bottom, #0a0908, transparent)",
+              background: "linear-gradient(to bottom, #fafaf9, transparent)",
             }}
           />
           {/* Bottom fade */}
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8"
             style={{
-              background: "linear-gradient(to top, #0a0908, transparent)",
+              background: "linear-gradient(to top, #fafaf9, transparent)",
             }}
           />
 
@@ -80,9 +80,9 @@ export function ProblemSection() {
                 key={label}
                 className="select-none whitespace-nowrap rounded-full px-3 py-1.5 text-[13px] leading-none"
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
-                  color: "rgba(255, 255, 255, 0.5)",
+                  backgroundColor: "rgba(0, 0, 0, 0.04)",
+                  border: "1px solid rgba(0, 0, 0, 0.08)",
+                  color: "rgba(0, 0, 0, 0.5)",
                 }}
               >
                 {label}

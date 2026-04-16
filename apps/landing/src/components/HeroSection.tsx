@@ -7,7 +7,7 @@ export function HeroSection() {
   return (
     <section
       className="relative flex w-full flex-col items-center pt-[65px]"
-      style={{ background: "#0a0908" }}
+      style={{ background: "#fafaf9" }}
     >
       {/* ASCII background — full width, behind everything */}
       <AsciiBackground className="absolute inset-0 z-0" />
@@ -25,10 +25,10 @@ export function HeroSection() {
         <div className="relative z-10 flex flex-col items-center gap-8 text-center">
           {/* Main heading */}
           <h1
-            className="max-w-4xl text-[40px] font-normal leading-[1.05] text-white sm:text-[56px] lg:text-[72px]"
+            className="max-w-4xl text-[40px] font-normal leading-[1.05] text-[#0a0908] sm:text-[56px] lg:text-[72px]"
             style={{ letterSpacing: "-0.02em" }}
           >
-            Every engineer <em className="font-serif italic font-light">has a philosophy.</em>
+            Every engineer <em className="font-serif italic" style={{ fontWeight: 100 }}>has a philosophy.</em>
             <br />
             Make sure it&apos;s never lost.
           </h1>
@@ -36,7 +36,7 @@ export function HeroSection() {
           {/* Subtitle */}
           <p
             className="max-w-xl text-[15px] leading-relaxed sm:text-[16px]"
-            style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            style={{ color: "rgba(0, 0, 0, 0.5)" }}
           >
             Revi watches how you review. Then reviews like you.
             <br />
@@ -46,7 +46,7 @@ export function HeroSection() {
           {/* CTA */}
           <a
             href="#waitlist"
-            className="bg-white text-[13px] font-medium text-[#0a0908] transition-opacity hover:opacity-90"
+            className="bg-[#0a0908] text-[13px] font-medium text-white transition-opacity hover:opacity-90"
             style={{ padding: "8px 16px", borderRadius: "8px" }}
           >
             Join the waitlist

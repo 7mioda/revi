@@ -11,7 +11,7 @@ const trustCards = [
     description: (
       <>
         Every decision Lyse makes is logged with context and reasoning.{" "}
-        <code className="font-mono text-white/70">@lyse explain</code> — works
+        <code className="font-mono text-[#0a0908]/70">@lyse explain</code> — works
         on any action, anytime.
       </>
     ),
@@ -25,18 +25,18 @@ const trustCards = [
 
 export function TrustSection() {
   return (
-    <section className="w-full" style={{ backgroundColor: "#0a0908" }}>
+    <section className="w-full" style={{ backgroundColor: "#fafaf9" }}>
       <div className="mx-auto max-w-[1200px] px-5 py-20">
         {/* Section header */}
         <div className="mb-12 flex flex-col items-center text-center">
           <span
             className="mb-4 text-[13px] font-medium uppercase tracking-widest"
-            style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            style={{ color: "rgba(0, 0, 0, 0.5)" }}
           >
             Trust
           </span>
           <h2
-            className="mb-4 text-[32px] font-semibold leading-tight text-white sm:text-[44px]"
+            className="mb-4 text-[32px] font-semibold leading-tight text-[#0a0908] sm:text-[44px]"
             style={{ letterSpacing: "-0.02em" }}
           >
             Lyse proposes.
@@ -45,7 +45,7 @@ export function TrustSection() {
           </h2>
           <p
             className="max-w-[560px] text-[15px] leading-relaxed"
-            style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            style={{ color: "rgba(0, 0, 0, 0.5)" }}
           >
             No autonomous action without your sign-off.
             <br />
@@ -60,16 +60,16 @@ export function TrustSection() {
               key={i}
               className={cn("rounded-lg p-6")}
               style={{
-                backgroundColor: "rgb(13, 13, 13)",
-                border: "1px solid rgba(255, 255, 255, 0.04)",
+                backgroundColor: "rgb(245, 245, 244)",
+                border: "1px solid rgba(0, 0, 0, 0.06)",
               }}
             >
-              <h3 className="mb-3 text-[17px] font-medium text-white">
+              <h3 className="mb-3 text-[17px] font-medium text-[#0a0908]">
                 {card.title}
               </h3>
               <p
                 className="text-[14px] leading-[24px]"
-                style={{ color: "rgba(255, 255, 255, 0.5)" }}
+                style={{ color: "rgba(0, 0, 0, 0.5)" }}
               >
                 {card.description}
               </p>
