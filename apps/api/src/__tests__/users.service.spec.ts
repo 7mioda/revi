@@ -74,13 +74,13 @@ describe('UsersService.run', () => {
     await expect(service.run('job-1', 'alice')).resolves.toBeUndefined()
   })
 
-  it('creates an anonymous client when no token is supplied', async () => {
-    const service = makeService()
+  it('falls back to server GITHUB_TOKEN when no user token is supplied', async () => {
+    const service = makeService() // makeConfigService returns 'server-token'
     await service.run('job-1', 'alice')
-    expect(octokit.createOctokitClient).toHaveBeenCalledWith(undefined)
+    expect(octokit.createOctokitClient).toHaveBeenCalledWith('server-token')
   })
 
-  it('creates an authenticated client when a token is supplied', async () => {
+  it('uses the user token when one is supplied, ignoring the server token', async () => {
     const service = makeService()
     await service.run('job-1', 'alice', 'ghp_mytoken')
     expect(octokit.createOctokitClient).toHaveBeenCalledWith('ghp_mytoken')
@@ -207,7 +207,21 @@ describe('UsersService.run', () => {
     expect(prModel.findOneAndUpdate).toHaveBeenCalledTimes(2)
   })
 
-  it('deduplicates repos found by search and listAccessibleRepos', async () => {
+  it('fetches comments ONLY from searchReposWithCommenter repos, not listAccessibleRepos-only repos', async () => {
+    vi.mocked(octokit.searchReposWithCommenter).mockResolvedValue([
+      { owner: 'org', name: 'public-commented' },
+    ])
+    vi.mocked(octokit.listAccessibleRepos).mockResolvedValue([
+      { owner: 'org', name: 'private-no-comments' },
+    ])
+    const service = makeService()
+    await service.run('job-1', 'alice', 'ghp_token')
+    expect(octokit.fetchAllComments).toHaveBeenCalledTimes(1)
+    expect(octokit.fetchAllComments).toHaveBeenCalledWith(expect.anything(), 'org', 'public-commented')
+    expect(octokit.fetchAllComments).not.toHaveBeenCalledWith(expect.anything(), 'org', 'private-no-comments')
+  })
+
+  it('repos step count includes both search and accessible repos (deduplicated)', async () => {
     vi.mocked(octokit.searchReposWithCommenter).mockResolvedValue([
       { owner: 'org', name: 'shared' },
       { owner: 'org', name: 'public-only' },
@@ -216,8 +230,11 @@ describe('UsersService.run', () => {
       { owner: 'org', name: 'shared' },
       { owner: 'org', name: 'private-only' },
     ])
-    const service = makeService()
+    const jobsService = makeJobsService()
+    const service = new UsersService(makeModel() as never, makeModel() as never, makeModel() as never, jobsService as never, makeConfigService())
     await service.run('job-1', 'alice', 'ghp_token')
-    expect(octokit.fetchAllComments).toHaveBeenCalledTimes(3)
+    // 3 unique repos total (shared deduped), but comments only for the 2 search repos
+    expect(jobsService.updateStep).toHaveBeenCalledWith('job-1', 'repos', 'done', 3)
+    expect(octokit.fetchAllComments).toHaveBeenCalledTimes(2)
   })
 })
