@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, Max, Min } from 'class-validator'
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator'
 
 export class GenerateSkillsDto {
   @IsOptional()
@@ -6,4 +6,12 @@ export class GenerateSkillsDto {
   @Min(1)
   @Max(500)
   sampleSize?: number
+
+  @IsOptional()
+  @IsString()
+  userId?: string
+
+  @IsOptional()
+  @IsString()
+  username?: string
 }

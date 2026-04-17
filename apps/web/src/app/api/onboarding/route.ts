@@ -20,13 +20,13 @@ STEP 2: Fetch comments
 Once you have the token, call fetch_comments immediately. Do not ask for confirmation. Tell the user you're about to fetch their GitHub comment history.
 
 STEP 3: Generate skills
-Once fetch_comments succeeds, call generate_skills immediately. Do not ask for confirmation. Tell the user you're building their review style profile from the comments found.
+Once fetch_comments succeeds, call generate_skills immediately. Do not ask for confirmation. Tell the user you're building their review style profile from the comments found. Pass the "user" field from the fetch_comments result as both userId and username.
 
 STEP 4: Ask for a PR to review
 Once generate_skills succeeds, briefly summarize what was built (e.g. "Your profile is ready! I found X skills from your comment history."). Then ask which pull request they'd like reviewed. Accept a GitHub URL (https://github.com/owner/repo/pull/42) or plain owner, repo, and PR number.
 
 STEP 5: Review the PR
-Extract owner, repo, and pull number from the user's response and call review_pr. Tell the user the review is being posted.
+Extract owner, repo, and pull number from the user's response and call review_pr. Pass the same userId used in generate_skills. Tell the user the review is being posted.
 
 STEP 6: Summarize
 Once review_pr succeeds, tell the user the review has been posted and give a one-paragraph plain-language summary of the verdict and key findings.
@@ -66,13 +66,16 @@ export async function POST(req: Request) {
       generate_skills: tool({
         description:
           'Generate a skill profile from stored comments. Call immediately after fetch_comments succeeds.',
-        parameters: z.object({}),
-        execute: async () => {
+        parameters: z.object({
+          userId: z.string().describe('GitHub login from the fetch_comments result'),
+          username: z.string().describe('GitHub login / display name'),
+        }),
+        execute: async ({ userId, username }) => {
           try {
             const res = await fetch(`${API_URL}/skills`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({}),
+              body: JSON.stringify({ userId, username }),
             })
             const body = await res.json() as unknown
             if (!res.ok) return { error: (body as { message?: string }).message ?? `HTTP ${res.status}` }
@@ -88,13 +91,14 @@ export async function POST(req: Request) {
           owner: z.string().describe('GitHub repository owner'),
           repo: z.string().describe('GitHub repository name'),
           pullNumber: z.number().int().positive().describe('Pull request number'),
+          userId: z.string().optional().describe('GitHub login to scope skill lookup'),
         }),
-        execute: async ({ owner, repo, pullNumber }) => {
+        execute: async ({ owner, repo, pullNumber, userId }) => {
           try {
             const res = await fetch(`${API_URL}/reviews`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ owner, repo, pullNumber, post: true }),
+              body: JSON.stringify({ owner, repo, pullNumber, post: true, userId }),
             })
             const body = await res.json() as unknown
             if (!res.ok) return { error: (body as { message?: string }).message ?? `HTTP ${res.status}` }

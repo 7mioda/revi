@@ -68,6 +68,12 @@ function LockIcon() {
 /*  Helpers                                                           */
 /* ------------------------------------------------------------------ */
 
+function maskIfToken(content: string): string {
+  return /^(ghp_|github_pat_|ghs_|gho_|ghu_)\S+/.test(content.trim())
+    ? '••••••••••••••••••••'
+    : content
+}
+
 function toolLabel(inv: ToolInvocation): { text: string; running: boolean } | null {
   const running = inv.state === 'call' || inv.state === 'partial-call'
   if (!running && inv.state === 'result' && (inv.result as { error?: unknown } | undefined)?.error) {
@@ -239,7 +245,7 @@ export default function OnboardingChat() {
                             {textContent}
                           </Markdown>
                         </div>
-                      ) : textContent}
+                      ) : maskIfToken(textContent)}
                     </div>
                   </div>
                 )}

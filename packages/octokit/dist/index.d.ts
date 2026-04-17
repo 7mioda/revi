@@ -8,4 +8,5 @@ export { fetchAllComments } from './fetch-all-comments.js';
 export { getUserRepos } from './get-user-repos.js';
 export { getAuthenticatedUser } from './get-authenticated-user.js';
 export { listAccessibleRepos } from './list-accessible-repos.js';
+export { searchReposWithCommenter } from './search-repos-with-commenter.js';
 //# sourceMappingURL=index.d.ts.map

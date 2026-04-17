@@ -16,4 +16,8 @@ export class CreateReviewDto {
   @IsOptional()
   @IsBoolean()
   post?: boolean
+
+  @IsOptional()
+  @IsString()
+  userId?: string
 }

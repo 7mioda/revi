@@ -56,6 +56,10 @@ export class Comment {
   /** ISO 8601 last-updated timestamp from GitHub. */
   @Prop({ type: String, required: true })
   updatedAt!: string
+
+  /** GitHub login of the owning user. Null for public/shared records. */
+  @Prop({ type: String, required: false, default: null, index: true })
+  userId!: string | null
 }
 
 export const CommentSchema = SchemaFactory.createForClass(Comment)

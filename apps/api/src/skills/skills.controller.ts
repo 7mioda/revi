@@ -11,6 +11,6 @@ export class SkillsController {
   @Post()
   @HttpCode(201)
   async generate(@Body() dto: GenerateSkillsDto): Promise<GenerateSkillsResult> {
-    return this.skillsService.generate(dto.sampleSize ?? 200)
+    return this.skillsService.generate(dto.sampleSize ?? 2000, dto.userId, dto.username)
   }
 }

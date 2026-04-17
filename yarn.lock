@@ -1178,6 +1178,7 @@ __metadata:
     "@octokit/plugin-retry": ^7.0.0
     "@octokit/plugin-throttling": ^9.0.0
     "@octokit/rest": ^21.0.0
+    typescript: ^6.0.2
     vitest: ^3.0.0
   languageName: unknown
   linkType: soft
@@ -4429,12 +4430,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-<<<<<<< Updated upstream
-"reselect@npm:^5.1.1":
-  version: 5.1.1
-  resolution: "reselect@npm:5.1.1"
-  checksum: 5d32d48be29071ddda21a775945c2210cf4ca3fccde1c4a0e1582ac3bf99c431c6c2330ef7ca34eae4c06feea617e7cb2c275c4b33ccf9a930836dfc98b49b13
-=======
 "remark-parse@npm:^11.0.0":
   version: 11.0.0
   resolution: "remark-parse@npm:11.0.0"
@@ -4457,7 +4452,13 @@ __metadata:
     unified: ^11.0.0
     vfile: ^6.0.0
   checksum: 6eab55cb3464ec01d8e002cc9fe02ae57f48162899693fd53b5ba553ac8699dae7b55fce9df7131a5981313b19b495d6fbfa98a9d6bd243e7485591364d9b5b3
->>>>>>> Stashed changes
+  languageName: node
+  linkType: hard
+
+"reselect@npm:^5.1.1":
+  version: 5.1.1
+  resolution: "reselect@npm:5.1.1"
+  checksum: 5d32d48be29071ddda21a775945c2210cf4ca3fccde1c4a0e1582ac3bf99c431c6c2330ef7ca34eae4c06feea617e7cb2c275c4b33ccf9a930836dfc98b49b13
   languageName: node
   linkType: hard
 

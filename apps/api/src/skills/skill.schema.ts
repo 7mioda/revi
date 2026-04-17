@@ -22,6 +22,14 @@ export class Skill {
   /** ISO 8601 timestamp of when this batch was generated. */
   @Prop({ type: String, required: true })
   generatedAt!: string
+
+  /** GitHub login of the owning user. Null for public/shared records. */
+  @Prop({ type: String, required: false, default: null, index: true })
+  userId!: string | null
+
+  /** GitHub login / display name of the owning user. */
+  @Prop({ type: String, required: false, default: null })
+  username!: string | null
 }
 
 export const SkillSchema = SchemaFactory.createForClass(Skill)

@@ -70,7 +70,7 @@ export class MeService {
     await Promise.all(mine.map((c) =>
       this.commentModel.findOneAndUpdate(
         { githubId: c.githubId },
-        c,
+        { ...c, userId: user.login },
         { upsert: true, new: true },
       ).exec(),
     ))

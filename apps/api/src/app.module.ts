@@ -9,6 +9,7 @@ import { MeModule } from './me/me.module.js'
 import { SkillsModule } from './skills/skills.module.js'
 import { ReviewsModule } from './reviews/reviews.module.js'
 import { WebhookModule } from './webhook/webhook.module.js'
+import { UsersModule } from './users/users.module.js'
 
 /**
  * Root application module.
@@ -33,6 +34,7 @@ import { WebhookModule } from './webhook/webhook.module.js'
     SkillsModule,
     ReviewsModule,
     WebhookModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

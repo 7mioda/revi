@@ -66,6 +66,90 @@ export const SKILL_DIMENSIONS: SkillDimension[] = [
       'how tests are reviewed, expectations around test coverage and structure, opinions on mocking vs. integration tests, and test naming habits',
     tags: ['testing', 'tdd', 'coverage'],
   },
+  {
+    key: 'security-mindset',
+    focus:
+      'how security concerns are surfaced — input validation, authentication/authorisation checks, injection risks, secret handling, OWASP issues, and how urgently security fixes are demanded vs. suggested',
+    tags: ['security', 'auth', 'validation'],
+  },
+  {
+    key: 'performance-awareness',
+    focus:
+      'how performance issues are identified and communicated — N+1 queries, unnecessary re-renders, algorithmic complexity, caching opportunities, and whether micro-optimisations are encouraged or discouraged',
+    tags: ['performance', 'optimization', 'complexity'],
+  },
+  {
+    key: 'code-readability',
+    focus:
+      'opinions on naming clarity, cognitive complexity, function/class size, self-documenting code vs. comments, and how strongly readability is weighted against brevity or cleverness',
+    tags: ['readability', 'naming', 'complexity'],
+  },
+  {
+    key: 'error-handling',
+    focus:
+      'expectations around error propagation, user-facing error messages, exception vs. result types, logging on errors, and patterns for distinguishing recoverable from unrecoverable failures',
+    tags: ['error-handling', 'resilience', 'logging'],
+  },
+  {
+    key: 'api-design',
+    focus:
+      'preferences for REST/GraphQL/RPC contract design, HTTP status code usage, request/response shape, backwards compatibility, versioning discipline, and how breaking changes are treated',
+    tags: ['api', 'rest', 'contracts'],
+  },
+  {
+    key: 'documentation-standards',
+    focus:
+      'expectations around inline comments, JSDoc/TSDoc, README updates, changelog entries, ADRs, and the balance between over-documentation and under-documentation',
+    tags: ['documentation', 'comments', 'jsdoc'],
+  },
+  {
+    key: 'dependency-management',
+    focus:
+      'attitudes toward adding third-party dependencies, version pinning, licence compliance, bundle-size awareness, and when to roll a solution in-house vs. reach for a library',
+    tags: ['dependencies', 'bundle-size', 'third-party'],
+  },
+  {
+    key: 'data-modeling',
+    focus:
+      'how schema design decisions are reviewed — normalisation, index choices, migration safety, nullable vs. required fields, and concerns about backward-incompatible data changes',
+    tags: ['database', 'schema', 'migrations'],
+  },
+  {
+    key: 'async-and-concurrency',
+    focus:
+      'how async/await patterns, promise chains, race conditions, deadlocks, cancellation, and concurrent state mutations are identified and addressed in reviews',
+    tags: ['async', 'concurrency', 'promises'],
+  },
+  {
+    key: 'type-safety',
+    focus:
+      'strictness expectations around TypeScript — use of `any`, type narrowing, generics, utility types, discriminated unions, and how type-level correctness is weighted in feedback',
+    tags: ['typescript', 'types', 'type-safety'],
+  },
+  {
+    key: 'observability-and-logging',
+    focus:
+      'expectations around structured logging, metric instrumentation, distributed tracing, alert-worthy conditions, and whether log verbosity and cardinality are called out',
+    tags: ['observability', 'logging', 'metrics'],
+  },
+  {
+    key: 'refactoring-instincts',
+    focus:
+      'when the reviewer pushes to extract, simplify, or generalise vs. accepting local duplication — patterns like DRY enforcement, premature abstraction warnings, and YAGNI observations',
+    tags: ['refactoring', 'dry', 'abstraction'],
+  },
+  {
+    key: 'review-prioritisation',
+    focus:
+      'how the reviewer classifies and signals severity — blocking issues vs. nits vs. optional suggestions — and how they sequence or group feedback to guide the author efficiently',
+    tags: ['prioritisation', 'blockers', 'nits'],
+  },
+  {
+    key: 'accessibility',
+    focus:
+      'how accessibility requirements are raised in UI/frontend changes — ARIA attributes, keyboard navigation, colour contrast, screen-reader semantics, and WCAG compliance expectations',
+    tags: ['accessibility', 'a11y', 'wcag'],
+  },
 ]
 
 // ---------------------------------------------------------------------------

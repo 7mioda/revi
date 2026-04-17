@@ -52,7 +52,8 @@ export class ReviewsService {
   ) {}
 
   async review(dto: CreateReviewDto): Promise<ReviewResponse> {
-    const latest = await this.skillModel.findOne().sort({ generatedAt: -1 }).lean().exec()
+    const latestQuery = dto.userId ? { userId: dto.userId } : {}
+    const latest = await this.skillModel.findOne(latestQuery).sort({ generatedAt: -1 }).lean().exec()
     if (latest === null) {
       throw new BadRequestException('No skills found. Run POST /skills first.')
     }

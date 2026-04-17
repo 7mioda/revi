@@ -29,8 +29,9 @@ export class SkillsService {
     @Inject(ConfigService) private readonly config: ConfigService<Env, true>,
   ) {}
 
-  async generate(sampleSize: number): Promise<GenerateSkillsResult> {
-    const rawComments = await this.commentModel.find().lean().exec()
+  async generate(sampleSize: number, userId?: string, username?: string): Promise<GenerateSkillsResult> {
+    const query = userId ? { userId } : {}
+    const rawComments = await this.commentModel.find(query).lean().exec()
 
     if (rawComments.length === 0) {
       throw new BadRequestException('No comments found. Run POST /me/comments first.')
@@ -46,7 +47,7 @@ export class SkillsService {
     const generatedAt = new Date().toISOString()
 
     await this.skillModel.insertMany(
-      skills.map((s) => ({ ...s, batchId, generatedAt })),
+      skills.map((s) => ({ ...s, batchId, generatedAt, userId: userId ?? null, username: username ?? null })),
     )
 
     return { generated: skills.length, skills }
