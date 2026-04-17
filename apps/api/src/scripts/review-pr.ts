@@ -15,8 +15,8 @@ import 'dotenv/config'
 import fs from 'fs'
 import path from 'path'
 import Anthropic from '@anthropic-ai/sdk'
-import { createOctokitClient } from '@revi/octokit'
-import type { OctokitClient } from '@revi/octokit'
+import { createOctokitClient, fetchPRDiff } from '@revi/octokit'
+import type { OctokitClient, PRFile } from '@revi/octokit'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,13 +51,6 @@ interface PRMeta {
   user: string
   base: string
   head: string
-}
-
-/** A single file in the PR's changeset. */
-interface PRFile {
-  filename: string
-  status: string
-  patch?: string
 }
 
 /** An existing inline review comment already posted on the PR. */
@@ -285,25 +278,6 @@ async function fetchPRMeta(
   }
 }
 
-async function fetchPRFiles(
-  client: OctokitClient,
-  owner: string,
-  repo: string,
-  pullNumber: number,
-): Promise<PRFile[]> {
-  const { data } = await client.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
-    owner,
-    repo,
-    pull_number: pullNumber,
-    per_page: 100,
-  })
-  return data.map((f) => ({
-    filename: f.filename,
-    status: f.status,
-    patch: f.patch,
-  }))
-}
-
 async function fetchExistingComments(
   client: OctokitClient,
   owner: string,
@@ -405,7 +379,7 @@ async function main(): Promise<void> {
   process.stderr.write(`Fetching PR ${owner}/${repo}#${pullNumber}…\n`)
   const [meta, files, existingComments] = await Promise.all([
     fetchPRMeta(client, owner, repo, pullNumber),
-    fetchPRFiles(client, owner, repo, pullNumber),
+    fetchPRDiff(client, owner, repo, pullNumber),
     fetchExistingComments(client, owner, repo, pullNumber),
   ])
   process.stderr.write(

@@ -4,8 +4,8 @@ import { InjectModel } from '@nestjs/mongoose'
 import { ConfigService } from '@nestjs/config'
 import type { Model } from 'mongoose'
 import Anthropic from '@anthropic-ai/sdk'
-import { createOctokitClient } from '@revi/octokit'
-import type { OctokitClient } from '@revi/octokit'
+import { createOctokitClient, fetchPRDiff } from '@revi/octokit'
+import type { OctokitClient, PRFile } from '@revi/octokit'
 import { Skill } from '../skills/skill.schema.js'
 import moreSkills from './generated_rules.json' with { type: 'json' }
 import rules from './skill.json' with { type: 'json' }
@@ -26,12 +26,6 @@ interface PRMeta {
   user: string
   base: string
   head: string
-}
-
-interface PRFile {
-  filename: string
-  status: string
-  patch?: string
 }
 
 interface ExistingComment {
@@ -71,7 +65,7 @@ export class ReviewsService {
 
     const [meta, files, existingComments] = await Promise.all([
       this.fetchPRMeta(client, dto.owner, dto.repo, dto.pullNumber),
-      this.fetchPRFiles(client, dto.owner, dto.repo, dto.pullNumber),
+      fetchPRDiff(client, dto.owner, dto.repo, dto.pullNumber),
       this.fetchExistingComments(client, dto.owner, dto.repo, dto.pullNumber),
     ])
 
@@ -119,25 +113,6 @@ export class ReviewsService {
       base: data.base.ref,
       head: data.head.ref,
     }
-  }
-
-  private async fetchPRFiles(
-    client: OctokitClient,
-    owner: string,
-    repo: string,
-    pullNumber: number,
-  ): Promise<PRFile[]> {
-    const { data } = await client.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
-      owner,
-      repo,
-      pull_number: pullNumber,
-      per_page: 100,
-    })
-    return data.map((f) => ({
-      filename: f.filename,
-      status: f.status,
-      patch: f.patch,
-    }))
   }
 
   private async fetchExistingComments(

@@ -9,4 +9,5 @@ export { listAccessibleRepos } from './list-accessible-repos.js';
 export { searchReposWithCommenter } from './search-repos-with-commenter.js';
 export { fetchUserIssues } from './fetch-user-issues.js';
 export { fetchUserPullRequests } from './fetch-user-pull-requests.js';
+export { fetchPRDiff } from './fetch-pr-diff.js';
 //# sourceMappingURL=index.js.map
