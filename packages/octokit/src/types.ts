@@ -84,6 +84,25 @@ export interface GithubIssue {
 }
 
 /**
+ * A single file in a pull request's changeset, as returned by
+ * `GET /repos/{owner}/{repo}/pulls/{pull_number}/files`.
+ */
+export interface PRFile {
+  /** Path of the changed file relative to the repository root. */
+  filename: string
+  /**
+   * Change status reported by GitHub: `'added'`, `'removed'`, `'modified'`,
+   * `'renamed'`, `'copied'`, `'changed'`, or `'unchanged'`.
+   */
+  status: string
+  /**
+   * Unified diff patch for this file. Absent for binary files and files
+   * whose diff exceeds GitHub's size limit.
+   */
+  patch?: string
+}
+
+/**
  * A GitHub pull request authored by the user, normalised from the Search API response.
  * `state` is `'merged'` when `mergedAt` is set, otherwise mirrors the raw API state.
  */
