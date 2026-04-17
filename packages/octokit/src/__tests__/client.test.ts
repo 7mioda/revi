@@ -15,4 +15,15 @@ describe('createOctokitClient', () => {
     expect(typeof client.rest.repos.listCommitCommentsForRepo).toBe('function')
     expect(typeof client.rest.repos.listForUser).toBe('function')
   })
+
+  it('creates an anonymous client when no token is provided', () => {
+    const client = createOctokitClient()
+    expect(typeof client.request).toBe('function')
+    expect(typeof client.paginate).toBe('function')
+  })
+
+  it('creates an anonymous client when token is undefined', () => {
+    const client = createOctokitClient(undefined)
+    expect(typeof client.paginate).toBe('function')
+  })
 })
