@@ -14,7 +14,7 @@
 import 'dotenv/config'
 import fs from 'fs'
 import path from 'path'
-import Anthropic from '@anthropic-ai/sdk'
+import { Anthropic } from '@anthropic-ai/sdk'
 import { createOctokitClient, fetchPRDiff } from '@revi/octokit'
 import type { OctokitClient, PRFile } from '@revi/octokit'
 

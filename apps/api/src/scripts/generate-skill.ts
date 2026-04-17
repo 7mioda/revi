@@ -14,7 +14,7 @@
 import 'dotenv/config'
 import fs from 'fs'
 import path from 'path'
-import Anthropic from '@anthropic-ai/sdk'
+import { Anthropic } from '@anthropic-ai/sdk'
 import type { GithubComment } from '@revi/octokit'
 import type { MyCommentsOutput } from './fetch-my-comments.js'
 
