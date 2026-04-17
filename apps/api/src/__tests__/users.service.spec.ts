@@ -8,6 +8,7 @@ vi.mock('@revi/octokit', () => ({
   createOctokitClient: vi.fn().mockReturnValue({}),
   fetchUserIssues: vi.fn().mockResolvedValue([]),
   fetchUserPullRequests: vi.fn().mockResolvedValue([]),
+  fetchPRDiff: vi.fn().mockResolvedValue([]),
   searchReposWithCommenter: vi.fn().mockResolvedValue([]),
   listAccessibleRepos: vi.fn().mockResolvedValue([]),
   fetchAllComments: vi.fn().mockResolvedValue([]),
@@ -49,6 +50,7 @@ beforeEach(() => {
   vi.mocked(octokit.createOctokitClient).mockReturnValue({} as never)
   vi.mocked(octokit.fetchUserIssues).mockResolvedValue([])
   vi.mocked(octokit.fetchUserPullRequests).mockResolvedValue([])
+  vi.mocked(octokit.fetchPRDiff).mockResolvedValue([])
   vi.mocked(octokit.searchReposWithCommenter).mockResolvedValue([])
   vi.mocked(octokit.listAccessibleRepos).mockResolvedValue([])
   vi.mocked(octokit.fetchAllComments).mockResolvedValue([])
@@ -154,6 +156,63 @@ describe('UsersService.fetchAndSave', () => {
     const result = await service.fetchAndSave('alice')
 
     expect(result.pullRequests).toBe(1)
+  })
+
+  it('fetches the diff for each PR in step 2', async () => {
+    vi.mocked(octokit.fetchUserPullRequests).mockResolvedValue([
+      { githubId: 20, number: 3, title: 'PR A', body: null, state: 'merged', authorLogin: 'alice', repoOwner: 'org', repoName: 'repo-a', labels: [], draft: false, createdAt: '', updatedAt: '', closedAt: null, mergedAt: null },
+      { githubId: 21, number: 7, title: 'PR B', body: null, state: 'open',   authorLogin: 'alice', repoOwner: 'org', repoName: 'repo-b', labels: [], draft: false, createdAt: '', updatedAt: '', closedAt: null, mergedAt: null },
+    ])
+    const service = makeService()
+
+    await service.fetchAndSave('alice')
+
+    expect(octokit.fetchPRDiff).toHaveBeenCalledWith(expect.anything(), 'org', 'repo-a', 3)
+    expect(octokit.fetchPRDiff).toHaveBeenCalledWith(expect.anything(), 'org', 'repo-b', 7)
+  })
+
+  it('saves each PR with its files immediately after fetching the diff', async () => {
+    const files = [{ filename: 'src/foo.ts', status: 'modified', patch: '@@ -1 +1 @@' }]
+    vi.mocked(octokit.fetchUserPullRequests).mockResolvedValue([
+      { githubId: 20, number: 3, title: 'PR', body: null, state: 'open', authorLogin: 'alice', repoOwner: 'o', repoName: 'r', labels: [], draft: false, createdAt: '', updatedAt: '', closedAt: null, mergedAt: null },
+    ])
+    vi.mocked(octokit.fetchPRDiff).mockResolvedValue(files)
+    const prModel = makeModel()
+    const service = new UsersService(
+      makeModel() as never,
+      prModel as never,
+      makeModel() as never,
+      makeConfigService(),
+    )
+
+    await service.fetchAndSave('alice')
+
+    expect(prModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { githubId: 20 },
+      expect.objectContaining({ files, userId: 'alice' }),
+      { upsert: true, new: true },
+    )
+  })
+
+  it('continues to next PR when diff fetch fails', async () => {
+    vi.mocked(octokit.fetchUserPullRequests).mockResolvedValue([
+      { githubId: 20, number: 3, title: 'PR A', body: null, state: 'open', authorLogin: 'alice', repoOwner: 'o', repoName: 'r1', labels: [], draft: false, createdAt: '', updatedAt: '', closedAt: null, mergedAt: null },
+      { githubId: 21, number: 4, title: 'PR B', body: null, state: 'open', authorLogin: 'alice', repoOwner: 'o', repoName: 'r2', labels: [], draft: false, createdAt: '', updatedAt: '', closedAt: null, mergedAt: null },
+    ])
+    vi.mocked(octokit.fetchPRDiff)
+      .mockRejectedValueOnce(Object.assign(new Error('not found'), { status: 404 }))
+      .mockResolvedValueOnce([])
+    const prModel = makeModel()
+    const service = new UsersService(
+      makeModel() as never,
+      prModel as never,
+      makeModel() as never,
+      makeConfigService(),
+    )
+
+    // Should not throw; second PR is still saved
+    await expect(service.fetchAndSave('alice')).resolves.toMatchObject({ pullRequests: 2 })
+    expect(prModel.findOneAndUpdate).toHaveBeenCalledTimes(2)
   })
 
   it('deduplicates repos found by search and listAccessibleRepos', async () => {

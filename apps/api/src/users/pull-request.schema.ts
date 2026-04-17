@@ -67,6 +67,10 @@ export class PullRequest {
   @Prop({ type: String, default: null })
   mergedAt!: string | null
 
+  /** Changed files with their unified diff patches. Populated by fetchPRDiff. */
+  @Prop({ type: [{ filename: String, status: String, patch: String }], default: [] })
+  files!: Array<{ filename: string; status: string; patch?: string }>
+
   /** GitHub login of the owning user this record belongs to. */
   @Prop({ type: String, required: false, default: null, index: true })
   userId!: string | null

@@ -7,11 +7,12 @@ import {
   createOctokitClient,
   fetchUserIssues,
   fetchUserPullRequests,
+  fetchPRDiff,
   searchReposWithCommenter,
   listAccessibleRepos,
   fetchAllComments,
 } from '@revi/octokit'
-import type { GithubIssue, GithubPullRequest } from '@revi/octokit'
+import type { GithubIssue } from '@revi/octokit'
 import { Issue } from './issue.schema.js'
 import { PullRequest } from './pull-request.schema.js'
 import { Comment } from '../me/comment.schema.js'
@@ -63,10 +64,25 @@ export class UsersService {
     this.logger.log(`Step 1: fetched ${issues.length} issues for ${username}`)
     await this.upsertIssues(issues, username)
 
-    // Step 2 — Pull requests
+    // Step 2 — Pull requests + diffs (stored per-PR as soon as the diff arrives)
     const prs = await fetchUserPullRequests(client, username)
     this.logger.log(`Step 2: fetched ${prs.length} pull requests for ${username}`)
-    await this.upsertPullRequests(prs, username)
+    for (const pr of prs) {
+      let files: Array<{ filename: string; status: string; patch?: string }> = []
+      try {
+        files = await fetchPRDiff(client, pr.repoOwner, pr.repoName, pr.number)
+      } catch (err: unknown) {
+        const status = typeof err === 'object' && err !== null && 'status' in err
+          ? (err as { status: number }).status
+          : 'unknown'
+        this.logger.warn(`Skipping diff for ${pr.repoOwner}/${pr.repoName}#${pr.number} — HTTP ${status}`)
+      }
+      await this.prModel.findOneAndUpdate(
+        { githubId: pr.githubId },
+        { ...pr, userId: username, files },
+        { upsert: true, new: true },
+      ).exec()
+    }
 
     // Step 3 — Repo discovery (search + private if token given)
     const publicRepos = await searchReposWithCommenter(client, username)
@@ -110,15 +126,6 @@ export class UsersService {
     ))
   }
 
-  private async upsertPullRequests(prs: GithubPullRequest[], userId: string): Promise<void> {
-    await Promise.all(prs.map((pr) =>
-      this.prModel.findOneAndUpdate(
-        { githubId: pr.githubId },
-        { ...pr, userId },
-        { upsert: true, new: true },
-      ).exec(),
-    ))
-  }
 }
 
 /**
