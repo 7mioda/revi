@@ -18,8 +18,10 @@ export type OctokitClient = Octokit & {
  * - `@octokit/plugin-throttling` — gracefully handles primary and secondary
  *   GitHub rate limits by logging a warning and retrying (never throws)
  *
- * @param token - A GitHub personal access token or OAuth token.
+ * @param token - Optional GitHub personal access token or OAuth token.
+ *   When omitted the client operates as an anonymous user — public resources
+ *   are still accessible, subject to the unauthenticated rate limit (60 req/h).
  * @returns A fully configured `OctokitClient`.
  */
-export declare function createOctokitClient(token: string): OctokitClient;
+export declare function createOctokitClient(token?: string): OctokitClient;
 //# sourceMappingURL=client.d.ts.map

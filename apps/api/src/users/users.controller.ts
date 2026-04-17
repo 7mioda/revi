@@ -1,27 +1,43 @@
 import 'reflect-metadata'
-import { Controller, Post, Body, Inject } from '@nestjs/common'
+import { Controller, Post, Param, Inject, Headers } from '@nestjs/common'
 import { UsersService } from './users.service.js'
-import { FetchUserCommentsDto } from './dto/fetch-user-comments.dto.js'
-import type { FetchUserCommentsResult } from './users.service.js'
+import type { UserActivityResult } from './users.service.js'
 
 /**
- * Exposes public-user comment fetching.
- * Uses the server's own GitHub token — no user token required.
+ * Exposes public-user activity fetching (issues, pull requests, comments).
+ * An optional `Authorization: Bearer <token>` header enables private-repo access.
  */
 @Controller('users')
 export class UsersController {
   constructor(@Inject(UsersService) private readonly usersService: UsersService) {}
 
   /**
-   * Fetches all public comments made by a GitHub username and persists them.
+   * Fetches issues, pull requests, and comments for a GitHub username and
+   * persists them in sequential steps.
    *
-   * `POST /users/comments`
+   * `POST /users/:username/activity`
    *
-   * @param dto - Request body containing the target GitHub username.
-   * @returns Summary with user login, number of records saved, and type breakdown.
+   * @param username      - GitHub login of the target user (path param).
+   * @param authorization - Optional `Authorization: Bearer <token>` header.
+   * @returns Counts of each resource type upserted.
    */
-  @Post('comments')
-  async fetchAndSave(@Body() dto: FetchUserCommentsDto): Promise<FetchUserCommentsResult> {
-    return this.usersService.fetchAndSave(dto.username)
+  @Post(':username/activity')
+  async fetchActivity(
+    @Param('username') username: string,
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<UserActivityResult> {
+    const token = extractBearerToken(authorization)
+    return this.usersService.fetchAndSave(username, token)
   }
+}
+
+/**
+ * Extracts the token from an `Authorization: Bearer <token>` header value.
+ * Returns `undefined` for absent or non-Bearer schemes.
+ */
+function extractBearerToken(authorization: string | undefined): string | undefined {
+  if (!authorization) return undefined
+  const [scheme, token] = authorization.split(' ')
+  if (scheme !== 'Bearer' || !token) return undefined
+  return token
 }

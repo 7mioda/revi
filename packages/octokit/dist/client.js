@@ -9,7 +9,9 @@ import { Octokit } from '@octokit/rest';
  * - `@octokit/plugin-throttling` — gracefully handles primary and secondary
  *   GitHub rate limits by logging a warning and retrying (never throws)
  *
- * @param token - A GitHub personal access token or OAuth token.
+ * @param token - Optional GitHub personal access token or OAuth token.
+ *   When omitted the client operates as an anonymous user — public resources
+ *   are still accessible, subject to the unauthenticated rate limit (60 req/h).
  * @returns A fully configured `OctokitClient`.
  */
 export function createOctokitClient(token) {
@@ -17,7 +19,7 @@ export function createOctokitClient(token) {
     // The composed instance is a superset of OctokitClient; the cast is safe.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return new OctokitWithPlugins({
-        auth: token,
+        ...(token !== undefined ? { auth: token } : {}),
         throttle: {
             // Structural type for `octokit` — we only need `log.warn`, which avoids
             // a circular reference back to the full OctokitClient type.
