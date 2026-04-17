@@ -15,7 +15,6 @@ vi.mock('@revi/octokit', () => ({
 }))
 
 import * as octokit from '@revi/octokit'
-
 import { UsersService } from '../users/users.service.js'
 
 // ---------------------------------------------------------------------------
@@ -24,6 +23,18 @@ import { UsersService } from '../users/users.service.js'
 function makeModel() {
   return {
     findOneAndUpdate: vi.fn().mockReturnValue({ exec: vi.fn().mockResolvedValue(null) }),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Minimal JobsService mock
+// ---------------------------------------------------------------------------
+function makeJobsService() {
+  return {
+    markRunning: vi.fn().mockResolvedValue(undefined),
+    updateStep: vi.fn().mockResolvedValue(undefined),
+    markDone: vi.fn().mockResolvedValue(undefined),
+    markFailed: vi.fn().mockResolvedValue(undefined),
   }
 }
 
@@ -37,6 +48,7 @@ function makeService() {
     makeModel() as never,
     makeModel() as never,
     makeModel() as never,
+    makeJobsService() as never,
     makeConfigService(),
   )
 }
@@ -56,44 +68,68 @@ beforeEach(() => {
   vi.mocked(octokit.fetchAllComments).mockResolvedValue([])
 })
 
-describe('UsersService.fetchAndSave', () => {
-  it('returns zero counts when everything is empty', async () => {
+describe('UsersService.run', () => {
+  it('completes without error when everything is empty', async () => {
     const service = makeService()
-
-    const result = await service.fetchAndSave('alice')
-
-    expect(result).toEqual({ user: 'alice', issues: 0, pullRequests: 0, comments: 0 })
+    await expect(service.run('job-1', 'alice')).resolves.toBeUndefined()
   })
 
   it('creates an anonymous client when no token is supplied', async () => {
     const service = makeService()
-
-    await service.fetchAndSave('alice')
-
+    await service.run('job-1', 'alice')
     expect(octokit.createOctokitClient).toHaveBeenCalledWith(undefined)
   })
 
   it('creates an authenticated client when a token is supplied', async () => {
     const service = makeService()
-
-    await service.fetchAndSave('alice', 'ghp_mytoken')
-
+    await service.run('job-1', 'alice', 'ghp_mytoken')
     expect(octokit.createOctokitClient).toHaveBeenCalledWith('ghp_mytoken')
+  })
+
+  it('marks the job running then done on success', async () => {
+    const jobsService = makeJobsService()
+    const service = new UsersService(makeModel() as never, makeModel() as never, makeModel() as never, jobsService as never, makeConfigService())
+
+    await service.run('job-1', 'alice')
+
+    expect(jobsService.markRunning).toHaveBeenCalledWith('job-1')
+    expect(jobsService.markDone).toHaveBeenCalledWith('job-1')
+    expect(jobsService.markFailed).not.toHaveBeenCalled()
+  })
+
+  it('marks each step running before it starts and done after it completes', async () => {
+    const jobsService = makeJobsService()
+    const service = new UsersService(makeModel() as never, makeModel() as never, makeModel() as never, jobsService as never, makeConfigService())
+
+    await service.run('job-1', 'alice')
+
+    // All four steps get a 'running' call followed by a 'done' call
+    for (const step of ['issues', 'pullRequests', 'repos', 'comments']) {
+      expect(jobsService.updateStep).toHaveBeenCalledWith('job-1', step, 'running')
+      expect(jobsService.updateStep).toHaveBeenCalledWith('job-1', step, 'done', expect.any(Number))
+    }
+  })
+
+  it('marks job failed when an unrecoverable error is thrown', async () => {
+    vi.mocked(octokit.fetchUserIssues).mockRejectedValue(new Error('network error'))
+    const jobsService = makeJobsService()
+    const service = new UsersService(makeModel() as never, makeModel() as never, makeModel() as never, jobsService as never, makeConfigService())
+
+    await service.run('job-1', 'alice')
+
+    expect(jobsService.markFailed).toHaveBeenCalledWith('job-1', 'network error')
+    expect(jobsService.markDone).not.toHaveBeenCalled()
   })
 
   it('does NOT call listAccessibleRepos when no token is given', async () => {
     const service = makeService()
-
-    await service.fetchAndSave('alice')
-
+    await service.run('job-1', 'alice')
     expect(octokit.listAccessibleRepos).not.toHaveBeenCalled()
   })
 
   it('calls listAccessibleRepos when a token is provided', async () => {
     const service = makeService()
-
-    await service.fetchAndSave('alice', 'ghp_mytoken')
-
+    await service.run('job-1', 'alice', 'ghp_mytoken')
     expect(octokit.listAccessibleRepos).toHaveBeenCalledOnce()
   })
 
@@ -103,9 +139,7 @@ describe('UsersService.fetchAndSave', () => {
       { owner: 'org', name: 'repo-b' },
     ])
     const service = makeService()
-
-    await service.fetchAndSave('alice')
-
+    await service.run('job-1', 'alice')
     expect(octokit.fetchAllComments).toHaveBeenCalledWith(expect.anything(), 'org', 'repo-a')
     expect(octokit.fetchAllComments).toHaveBeenCalledWith(expect.anything(), 'org', 'repo-b')
   })
@@ -114,19 +148,13 @@ describe('UsersService.fetchAndSave', () => {
     vi.mocked(octokit.searchReposWithCommenter).mockResolvedValue([{ owner: 'o', name: 'r' }])
     vi.mocked(octokit.fetchAllComments).mockResolvedValue([
       { username: 'alice', githubId: 1, type: 'pr_comment', body: '', path: null, diffHunk: null, pullRequestNumber: null, repoOwner: 'o', repoName: 'r', createdAt: '', updatedAt: '' },
-      { username: 'bob', githubId: 2, type: 'pr_comment', body: '', path: null, diffHunk: null, pullRequestNumber: null, repoOwner: 'o', repoName: 'r', createdAt: '', updatedAt: '' },
+      { username: 'bob',   githubId: 2, type: 'pr_comment', body: '', path: null, diffHunk: null, pullRequestNumber: null, repoOwner: 'o', repoName: 'r', createdAt: '', updatedAt: '' },
     ])
     const commentModel = makeModel()
-    const service = new UsersService(
-      makeModel() as never,
-      makeModel() as never,
-      commentModel as never,
-      makeConfigService(),
-    )
+    const service = new UsersService(makeModel() as never, makeModel() as never, commentModel as never, makeJobsService() as never, makeConfigService())
 
-    const result = await service.fetchAndSave('alice')
+    await service.run('job-1', 'alice')
 
-    expect(result.comments).toBe(1)
     expect(commentModel.findOneAndUpdate).toHaveBeenCalledOnce()
     expect(commentModel.findOneAndUpdate).toHaveBeenCalledWith(
       { githubId: 1 },
@@ -135,38 +163,13 @@ describe('UsersService.fetchAndSave', () => {
     )
   })
 
-  it('counts saved issues from step 1', async () => {
-    vi.mocked(octokit.fetchUserIssues).mockResolvedValue([
-      { githubId: 10, number: 1, title: 'Bug', body: null, state: 'open', authorLogin: 'alice', repoOwner: 'o', repoName: 'r', labels: [], createdAt: '', updatedAt: '', closedAt: null },
-      { githubId: 11, number: 2, title: 'Feature', body: null, state: 'closed', authorLogin: 'alice', repoOwner: 'o', repoName: 'r', labels: [], createdAt: '', updatedAt: '', closedAt: null },
-    ])
-    const service = makeService()
-
-    const result = await service.fetchAndSave('alice')
-
-    expect(result.issues).toBe(2)
-  })
-
-  it('counts saved PRs from step 2', async () => {
-    vi.mocked(octokit.fetchUserPullRequests).mockResolvedValue([
-      { githubId: 20, number: 3, title: 'PR', body: null, state: 'merged', authorLogin: 'alice', repoOwner: 'o', repoName: 'r', labels: [], draft: false, createdAt: '', updatedAt: '', closedAt: null, mergedAt: null },
-    ])
-    const service = makeService()
-
-    const result = await service.fetchAndSave('alice')
-
-    expect(result.pullRequests).toBe(1)
-  })
-
-  it('fetches the diff for each PR in step 2', async () => {
+  it('fetches the diff for each PR', async () => {
     vi.mocked(octokit.fetchUserPullRequests).mockResolvedValue([
       { githubId: 20, number: 3, title: 'PR A', body: null, state: 'merged', authorLogin: 'alice', repoOwner: 'org', repoName: 'repo-a', labels: [], draft: false, createdAt: '', updatedAt: '', closedAt: null, mergedAt: null },
       { githubId: 21, number: 7, title: 'PR B', body: null, state: 'open',   authorLogin: 'alice', repoOwner: 'org', repoName: 'repo-b', labels: [], draft: false, createdAt: '', updatedAt: '', closedAt: null, mergedAt: null },
     ])
     const service = makeService()
-
-    await service.fetchAndSave('alice')
-
+    await service.run('job-1', 'alice')
     expect(octokit.fetchPRDiff).toHaveBeenCalledWith(expect.anything(), 'org', 'repo-a', 3)
     expect(octokit.fetchPRDiff).toHaveBeenCalledWith(expect.anything(), 'org', 'repo-b', 7)
   })
@@ -178,14 +181,9 @@ describe('UsersService.fetchAndSave', () => {
     ])
     vi.mocked(octokit.fetchPRDiff).mockResolvedValue(files)
     const prModel = makeModel()
-    const service = new UsersService(
-      makeModel() as never,
-      prModel as never,
-      makeModel() as never,
-      makeConfigService(),
-    )
+    const service = new UsersService(makeModel() as never, prModel as never, makeModel() as never, makeJobsService() as never, makeConfigService())
 
-    await service.fetchAndSave('alice')
+    await service.run('job-1', 'alice')
 
     expect(prModel.findOneAndUpdate).toHaveBeenCalledWith(
       { githubId: 20 },
@@ -203,15 +201,9 @@ describe('UsersService.fetchAndSave', () => {
       .mockRejectedValueOnce(Object.assign(new Error('not found'), { status: 404 }))
       .mockResolvedValueOnce([])
     const prModel = makeModel()
-    const service = new UsersService(
-      makeModel() as never,
-      prModel as never,
-      makeModel() as never,
-      makeConfigService(),
-    )
+    const service = new UsersService(makeModel() as never, prModel as never, makeModel() as never, makeJobsService() as never, makeConfigService())
 
-    // Should not throw; second PR is still saved
-    await expect(service.fetchAndSave('alice')).resolves.toMatchObject({ pullRequests: 2 })
+    await expect(service.run('job-1', 'alice')).resolves.toBeUndefined()
     expect(prModel.findOneAndUpdate).toHaveBeenCalledTimes(2)
   })
 
@@ -221,14 +213,11 @@ describe('UsersService.fetchAndSave', () => {
       { owner: 'org', name: 'public-only' },
     ])
     vi.mocked(octokit.listAccessibleRepos).mockResolvedValue([
-      { owner: 'org', name: 'shared' },       // duplicate
+      { owner: 'org', name: 'shared' },
       { owner: 'org', name: 'private-only' },
     ])
     const service = makeService()
-
-    await service.fetchAndSave('alice', 'ghp_token')
-
-    // fetchAllComments should be called 3 times, not 4 (deduped)
+    await service.run('job-1', 'alice', 'ghp_token')
     expect(octokit.fetchAllComments).toHaveBeenCalledTimes(3)
   })
 })
