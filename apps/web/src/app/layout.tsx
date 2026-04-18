@@ -34,8 +34,8 @@ export default function RootLayout({
           signInUrl="/sign-in"
           signInFallbackRedirectUrl="/"
           signUpUrl="/sign-in"
-          cssLayerName="clerk"
           appearance={{
+            cssLayerName: 'clerk',
             variables: {
               fontFamily: 'var(--font-inter), sans-serif',
               colorPrimary: '#000000',

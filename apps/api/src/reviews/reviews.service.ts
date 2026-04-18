@@ -19,7 +19,7 @@ import {
   mapToGithubReview,
   ReviewResultSchema,
 } from '../scripts/review-pr.js'
-import type { ReviewResult, SkillEntry, PreferenceEntry, ExistingComment } from '../scripts/review-pr.js'
+import type { ReviewResult, SkillEntry, PreferenceEntry, ExistingComment, GithubReviewPayload } from '../scripts/review-pr.js'
 import type { CreateReviewDto } from './dto/create-review.dto.js'
 import type { Env } from '../config.js'
 
@@ -165,7 +165,7 @@ export class ReviewsService {
     owner: string,
     repo: string,
     pullNumber: number,
-    payload: { body: string; event: string; comments: Array<{ path?: string; line?: number; side?: string; in_reply_to_id?: number; body: string }> },
+    payload: GithubReviewPayload,
   ): Promise<void> {
     const newComments = payload.comments.filter((c) => !c.in_reply_to_id)
     const replies = payload.comments.filter((c) => !!c.in_reply_to_id)
