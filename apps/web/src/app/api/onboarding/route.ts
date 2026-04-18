@@ -68,7 +68,9 @@ If they want to talk to one of the engineers in Revi — not to review a PR, but
 
 If they want to set up from scratch via chat, or if they paste a GitHub token directly, use the full setup path. ${user.displayName ? '' : 'Ask for their name first. '}Ask what they want to use Revi for. ${tokenInstruction} Once you have the token, call fetch_comments right away. Once that finishes, call generate_skills immediately. When that is done, tell them what you found in one or two sentences. Then ask which PR they want reviewed and call review_pr.
 
-Do not mix paths. If a tool returns an error, explain what went wrong in plain terms and suggest what to try. For a token error, ask them to check it has the repo scope.`
+Do not mix paths. If a tool returns an error, explain what went wrong in plain terms and suggest what to try. For a token error, ask them to check it has the repo scope.
+
+${user.githubUsername ? `When you see __init__, call get_activity_summary first, before writing anything. If the result has firstTime: true or all counts are zero and no profile syncs, greet normally. If there is activity, open with a single natural sentence summarising it — for example "your profile synced and Revi generated 8 new skills since you were last here" — then the normal greeting. One sentence max. Never say "while you were away".` : ''}`
 }
 
 /** Returns headers with Authorization when a Clerk session token is available. */
@@ -92,6 +94,38 @@ export async function POST(req: Request) {
     system: buildSystem(userCtx),
     messages,
     tools: {
+      get_activity_summary: tool({
+        description:
+          'Get a summary of Revi activity since the user last visited. Call this once at the start of the conversation in response to __init__, before greeting the user, when githubUsername is known.',
+        parameters: z.object({}),
+        execute: async () => {
+          console.log('get_activity_summary', userId)
+          if (!userId) return { firstTime: true }
+          try {
+            const client = await clerkClient()
+            const user = await client.users.getUser(userId)
+            const githubUsername = '7mioda'
+            const meta = user.publicMetadata as Record<string, unknown>
+            const lastSeenAt = meta.lastSeenAt as string | undefined
+            const now = new Date().toISOString()
+            void client.users.updateUser(userId, {
+              publicMetadata: { ...meta, lastSeenAt: now },
+            })
+            console.log('lastSeenAt', lastSeenAt)
+            console.log('githubUsername', githubUsername)
+            if (!lastSeenAt || !githubUsername) return { firstTime: true }
+            const res = await fetch(
+              `${API_URL}/profiles/${githubUsername}/activity-summary?since=${encodeURIComponent(lastSeenAt)}`,
+            )
+            console.log('res', res)
+            if (!res.ok) return { firstTime: true }
+            const data = await res.json() as unknown
+            return { firstTime: false, since: lastSeenAt, githubUsername, ...(data as object) }
+          } catch {
+            return { firstTime: true }
+          }
+        },
+      }),
       fetch_comments: tool({
         description:
           "Fetch and save the user's GitHub comments. Call immediately after receiving the GitHub token.",

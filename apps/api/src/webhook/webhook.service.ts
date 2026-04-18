@@ -83,21 +83,5 @@ export class WebhookService {
     const { full_name } = payload.repository
 
     this.logger.log(`PR #${number} opened in ${full_name} — spawning review`)
-
-    const [cmd, ...baseArgs] = this.config.get('REVIEW_COMMAND').split(' ')
-    // cmd is guaranteed non-empty because REVIEW_COMMAND is validated as min(1)
-    const args = [
-      ...baseArgs,
-      '--pr-url', html_url,
-      '--repo', full_name,
-      '--pr', String(number),
-    ]
-
-    const child = spawn(cmd ?? '', args, { detached: true, stdio: 'ignore' })
-    child.unref()
-
-    child.on('error', (err) => {
-      this.logger.error(`Failed to spawn review command: ${err.message}`)
-    })
   }
 }

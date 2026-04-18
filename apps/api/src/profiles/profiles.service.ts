@@ -212,6 +212,24 @@ export class ProfilesService {
     return this.profileModel.find().sort({ followers: -1 }).lean()
   }
 
+  async getActivitySummary(username: string, since: string) {
+    const profile = await this.findProfile(username)
+    const [profileSyncs, skillsGenerated, preferencesGenerated] = await Promise.all([
+      this.jobsService.findCompletedAfter(username, since),
+      this.skillsService.countGeneratedAfter(username, since),
+      this.preferencesService.countGeneratedAfter(username, since),
+    ])
+    return {
+      profileSyncs: profileSyncs.map((j) => ({
+        completedAt: j.completedAt,
+        steps: j.steps.map((s) => ({ name: s.name, count: s.count })),
+      })),
+      skillsGenerated,
+      preferencesGenerated,
+      reviewsTotal: profile?.reviews ?? 0,
+    }
+  }
+
   async getPersonaContext(username: string) {
     const profile = await this.findProfile(username)
     if (!profile) return null

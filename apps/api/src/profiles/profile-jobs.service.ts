@@ -60,4 +60,10 @@ export class ProfileJobsService {
   async findById(jobId: string): Promise<ProfileSyncJob | null> {
     return this.jobModel.findById(jobId).lean()
   }
+
+  async findCompletedAfter(username: string, since: string): Promise<ProfileSyncJob[]> {
+    return this.jobModel
+      .find({ username, status: 'done', completedAt: { $gt: since } })
+      .lean()
+  }
 }

@@ -4,8 +4,10 @@ import {
   Post,
   Get,
   Param,
+  Query,
   Body,
   NotFoundException,
+  BadRequestException,
   HttpCode,
 } from '@nestjs/common'
 import { ProfilesService } from './profiles.service.js'
@@ -53,6 +55,17 @@ export class ProfilesController {
     const job = await this.profilesService.findJob(jobId)
     if (!job) throw new NotFoundException(`Job ${jobId} not found`)
     return job
+  }
+
+  /** Activity summary since a given ISO timestamp — used for login recap. */
+  @Public()
+  @Get(':username/activity-summary')
+  async getActivitySummary(
+    @Param('username') username: string,
+    @Query('since') since: string,
+  ) {
+    if (!since) throw new BadRequestException('since query param is required')
+    return this.profilesService.getActivitySummary(username, since)
   }
 
   /** Fetch skills + preferences + profile for a persona chat session. */

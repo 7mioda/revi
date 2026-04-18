@@ -109,6 +109,10 @@ export class SkillsService {
     return this.skillModel.find({ username }).lean().exec()
   }
 
+  async countGeneratedAfter(username: string, since: string): Promise<number> {
+    return this.skillModel.countDocuments({ username, generatedAt: { $gt: since } })
+  }
+
   /** Query for the `comments` collection — uses `username` for login matching. */
   private buildCommentQuery(userId?: string, username?: string): Record<string, unknown> {
     const conditions: Record<string, unknown>[] = []
