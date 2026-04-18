@@ -1,5 +1,5 @@
-import OnboardingChat from '@/components/onboarding-chat'
+import Chat from '@/components/chat'
 
 export default function Home() {
-  return <OnboardingChat />
+  return <Chat />
 }

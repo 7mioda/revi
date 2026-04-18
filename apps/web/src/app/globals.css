@@ -6,7 +6,7 @@
   .cl-card {
     box-shadow: none !important;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border-radius: 0;
     overflow: hidden;
   }
 
@@ -36,9 +36,9 @@
     background: #000;
     color: #fff;
     font-weight: 500;
-    border-radius: 6px;
+    border-radius: 0;
     box-shadow: none;
-    height: 36px;
+    height: 40px;
     font-size: 0.9375rem;
 
     /* Hide the arrow icon */
@@ -57,9 +57,9 @@
 
   .cl-formFieldInput {
     border-color: #e5e7eb;
-    border-radius: 6px;
+    border-radius: 0;
     background: #f9fafb;
-    height: 36px;
+    height: 40px;
 
     &:focus {
       border-color: #111827;
@@ -80,10 +80,10 @@
   /* Social / OAuth buttons */
   .cl-socialButtonsBlockButton {
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 0;
     background: #fff;
     box-shadow: none;
-    height: 36px;
+    height: 40px;
 
     &:hover {
       background: #f9fafb;

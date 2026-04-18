@@ -6,12 +6,12 @@
  */
 export function PixelLoader() {
   return (
-    <div className="inline-flex items-center gap-3 px-4 py-3">
+    <div className="inline-flex items-center gap-3 px-0 py-2">
       <div className="relative">
         {/* 8x8 pixel-art brain, each "pixel" is a 4x4 CSS square */}
         <svg
-          width="32"
-          height="32"
+          width="24"
+          height="24"
           viewBox="0 0 8 8"
           fill="none"
           className="animate-[pixel-pulse_1.2s_ease-in-out_infinite]"
