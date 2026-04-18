@@ -10,11 +10,13 @@ import {
 import type { RawBodyRequest } from '@nestjs/common'
 import type { Request } from 'express'
 import { WebhookService } from './webhook.service.js'
+import { Public } from '../auth/public.decorator.js'
 
 /**
  * Receives GitHub webhook events.
  * Signature verification and event dispatching are delegated to `WebhookService`.
  */
+@Public()
 @Controller('webhook')
 export class WebhookController {
   constructor(private readonly webhook: WebhookService) {}

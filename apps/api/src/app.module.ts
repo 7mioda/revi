@@ -10,6 +10,9 @@ import { SkillsModule } from './skills/skills.module.js'
 import { ReviewsModule } from './reviews/reviews.module.js'
 import { WebhookModule } from './webhook/webhook.module.js'
 import { UsersModule } from './users/users.module.js'
+import { PreferencesModule } from './preferences/preferences.module.js'
+import { ProfilesModule } from './profiles/profiles.module.js'
+import { AuthModule } from './auth/auth.module.js'
 
 /**
  * Root application module.
@@ -27,6 +30,7 @@ import { UsersModule } from './users/users.module.js'
       inject: [ConfigService],
       useFactory: (config: ConfigService<Env, true>) => ({
         uri: config.get('MONGODB_URI'),
+        dbName: config.get('MONGODB_DB_NAME'),
       }),
     }),
     GithubModule,
@@ -35,6 +39,9 @@ import { UsersModule } from './users/users.module.js'
     ReviewsModule,
     WebhookModule,
     UsersModule,
+    PreferencesModule,
+    ProfilesModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

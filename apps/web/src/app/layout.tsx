@@ -1,3 +1,4 @@
+import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -5,8 +6,20 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'Revi',
-  description: 'PR review voice cloner',
+  icons: {
+    icon: "/logo-revi.svg",
+    shortcut: "/logo-revi.svg",
+    apple: "/logo-revi.svg",
+  },
+  title: "Revi – Reviews like you",
+  description:
+    "Revi watches how you review. Then reviews like you. Even when you're not there.",
+  openGraph: {
+    title: "Revi – Reviews like you",
+    description:
+      "Revi watches how you review. Then reviews like you. Even when you're not there.",
+    images: ["/seo/og-image.png"],
+  },
 }
 
 export default function RootLayout({
@@ -17,7 +30,27 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-white text-gray-900 antialiased">
-        {children}
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signInFallbackRedirectUrl="/"
+          signUpUrl="/sign-in"
+          cssLayerName="clerk"
+          appearance={{
+            variables: {
+              fontFamily: 'var(--font-inter), sans-serif',
+              colorPrimary: '#000000',
+              colorText: '#111827',
+              colorTextSecondary: '#6b7280',
+              colorBackground: '#ffffff',
+              colorInputBackground: '#f9fafb',
+              colorInputText: '#111827',
+              borderRadius: '6px',
+              spacingUnit: '16px',
+            },
+          }}
+        >
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   )

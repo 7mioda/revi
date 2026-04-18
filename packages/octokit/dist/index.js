@@ -10,4 +10,6 @@ export { searchReposWithCommenter } from './search-repos-with-commenter.js';
 export { fetchUserIssues } from './fetch-user-issues.js';
 export { fetchUserPullRequests } from './fetch-user-pull-requests.js';
 export { fetchPRDiff } from './fetch-pr-diff.js';
+export { getGithubUser } from './get-github-user.js';
+export { fetchUserDiscussions } from './fetch-user-discussions.js';
 //# sourceMappingURL=index.js.map

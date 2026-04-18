@@ -1,4 +1,4 @@
-export type { GithubComment, RepoRef, CommentType, AuthenticatedUser, GithubIssue, GithubPullRequest, PRFile } from './types.js';
+export type { GithubComment, RepoRef, CommentType, AuthenticatedUser, GithubIssue, GithubPullRequest, PRFile, GithubUser, GithubDiscussion } from './types.js';
 export { createOctokitClient } from './client.js';
 export type { OctokitClient } from './client.js';
 export { fetchPRReviewComments } from './fetch-pr-review-comments.js';
@@ -12,4 +12,6 @@ export { searchReposWithCommenter } from './search-repos-with-commenter.js';
 export { fetchUserIssues } from './fetch-user-issues.js';
 export { fetchUserPullRequests } from './fetch-user-pull-requests.js';
 export { fetchPRDiff } from './fetch-pr-diff.js';
+export { getGithubUser } from './get-github-user.js';
+export { fetchUserDiscussions } from './fetch-user-discussions.js';
 //# sourceMappingURL=index.d.ts.map

@@ -30,6 +30,10 @@ export class Skill {
   /** GitHub login / display name of the owning user. */
   @Prop({ type: String, required: false, default: null })
   username!: string | null
+
+  /** Skill dimension key (e.g. 'review-style'). Null for legacy records. */
+  @Prop({ type: String, required: false, default: null, index: true })
+  dimension!: string | null
 }
 
 export const SkillSchema = SchemaFactory.createForClass(Skill)

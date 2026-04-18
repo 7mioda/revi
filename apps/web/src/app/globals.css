@@ -1,5 +1,109 @@
 @import "tailwindcss";
 
+@layer clerk {
+  /* Card wrapper — remove shadow, flat gray border */
+  .cl-cardBox,
+  .cl-card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  /* Flatten the footer sections (sign-up link + Clerk branding) */
+  .cl-footer,
+  .cl-footerAction {
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  /* Neutralize the development mode banner — remove orange color and gradient bg */
+  .cl-footer {
+    background: #fff !important;
+    background-image: none !important;
+  }
+
+  .cl-footer * {
+    color: #9ca3af !important;
+    background-image: none !important;
+  }
+
+  .cl-header {
+    display: none !important;
+  }
+
+  .cl-formButtonPrimary {
+    background: #000;
+    color: #fff;
+    font-weight: 500;
+    border-radius: 6px;
+    box-shadow: none;
+    height: 36px;
+    font-size: 0.9375rem;
+
+    /* Hide the arrow icon */
+    svg, img {
+      display: none;
+    }
+
+    &:hover {
+      background: #1f2937;
+    }
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .cl-formFieldInput {
+    border-color: #e5e7eb;
+    border-radius: 6px;
+    background: #f9fafb;
+    height: 36px;
+
+    &:focus {
+      border-color: #111827;
+      box-shadow: none;
+      outline: none;
+    }
+  }
+
+  .cl-dividerLine {
+    background: #e5e7eb;
+  }
+
+  .cl-dividerText {
+    color: #9ca3af;
+    font-size: 0.75rem;
+  }
+
+  /* Social / OAuth buttons */
+  .cl-socialButtonsBlockButton {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: none;
+    height: 36px;
+
+    &:hover {
+      background: #f9fafb;
+    }
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
+
+  .cl-footerActionLink {
+    color: #111827;
+    font-weight: 500;
+  }
+
+  .cl-identityPreviewText {
+    color: #111827;
+  }
+}
+
 @keyframes message-in {
   from {
     opacity: 0;
@@ -9,6 +113,11 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes intro-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes bounce-dot {

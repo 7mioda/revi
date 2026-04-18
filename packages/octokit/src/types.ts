@@ -103,6 +103,42 @@ export interface PRFile {
 }
 
 /**
+ * GitHub public profile metadata for a user, returned by `GET /users/{username}`.
+ */
+export interface GithubUser {
+  login: string
+  githubId: number
+  avatarUrl: string | null
+  name: string | null
+  bio: string | null
+  company: string | null
+  location: string | null
+  email: string | null
+  blog: string | null
+  twitterUsername: string | null
+  followers: number
+  following: number
+  publicRepos: number
+  /** ISO 8601 timestamp when the GitHub account was created. */
+  githubCreatedAt: string
+}
+
+/**
+ * A GitHub Discussion authored by the user, fetched via the GraphQL API.
+ */
+export interface GithubDiscussion {
+  /** Global node ID from GitHub GraphQL (string, not numeric). */
+  githubId: string
+  title: string
+  body: string | null
+  repoOwner: string
+  repoName: string
+  authorLogin: string
+  createdAt: string
+  updatedAt: string
+}
+
+/**
  * A GitHub pull request authored by the user, normalised from the Search API response.
  * `state` is `'merged'` when `mergedAt` is set, otherwise mirrors the raw API state.
  */

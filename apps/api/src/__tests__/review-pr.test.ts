@@ -29,7 +29,7 @@ const SAMPLE_FILES = [
 ]
 
 const SAMPLE_COMMENTS = [
-  { path: 'src/auth.ts', line: 3, body: 'this can be extracted' },
+  { id: 1001, author: 'alice', path: 'src/auth.ts', line: 3, body: 'this can be extracted' },
 ]
 
 const SAMPLE_SKILLS: SkillEntry[] = [

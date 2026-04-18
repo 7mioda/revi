@@ -25,5 +25,6 @@ import { MeModule } from '../me/me.module.js'
   ],
   controllers: [UsersController],
   providers: [UsersService, JobsService],
+  exports: [MongooseModule],
 })
 export class UsersModule {}

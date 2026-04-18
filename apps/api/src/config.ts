@@ -3,10 +3,14 @@ import { z } from 'zod'
 const envSchema = z.object({
   GITHUB_TOKEN: z.string().min(1, 'GITHUB_TOKEN is required'),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
+  MONGODB_DB_NAME: z.string().min(1, 'MONGODB_DB_NAME is required'),
   ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
   PORT: z.coerce.number().int().positive().default(3000),
   WEBHOOK_SECRET: z.string().min(1, 'WEBHOOK_SECRET is required'),
-  REVIEW_COMMAND: z.string().min(1, 'REVIEW_COMMAND is required'),
+  /** Optional — if absent, Novu notifications are silently skipped. */
+  NOVU_API_KEY: z.string().optional(),
+  /** Optional — if absent, ClerkGuard runs in no-op mode (all requests allowed). */
+  CLERK_SECRET_KEY: z.string().optional(),
 })
 
 /** Parsed, validated environment configuration. */

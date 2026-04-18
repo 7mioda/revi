@@ -30,13 +30,13 @@ export const metadata: Metadata = {
     shortcut: "/logo-revi.svg",
     apple: "/logo-revi.svg",
   },
-  title: "Lyse – The #1 AI assistant for tasks",
+  title: "Revi – Reviews like you",
   description:
-    "The PM your team never hired. Lyse handles spec writing, backlog prioritization, and decision logging so your engineering team can focus on building.",
+    "Revi watches how you review. Then reviews like you. Even when you're not there.",
   openGraph: {
-    title: "Lyse – The #1 AI assistant for tasks",
+    title: "Revi – Reviews like you",
     description:
-      "The PM your team never hired. Everything a PM does. Nothing a PM costs.",
+      "Revi watches how you review. Then reviews like you. Even when you're not there.",
     images: ["/seo/og-image.png"],
   },
 };

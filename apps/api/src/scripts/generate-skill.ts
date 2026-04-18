@@ -61,6 +61,28 @@ export const SKILL_DIMENSIONS: SkillDimension[] = [
     tags: ['typescript', 'architecture', 'patterns'],
   },
   {
+    key: 'review-prioritisation',
+    focus:
+      'how the reviewer classifies and signals severity — blocking issues vs. nits vs. optional suggestions — and how they sequence or group feedback to guide the author efficiently',
+    tags: ['prioritisation', 'blockers', 'nits'],
+  },
+]
+
+
+export const EXTRA_SKILL_DIMENSIONS: SkillDimension[] = [
+  {
+    key: 'review-style',
+    focus:
+      'communication tone, phrasing of feedback, how suggestions vs. hard requirements are expressed, and any signature phrases or habits',
+    tags: ['style', 'communication', 'code-review'],
+  },
+  {
+    key: 'technical-patterns',
+    focus:
+      'preferred language features, naming conventions, architectural patterns, error handling strategies, and any technology-specific preferences',
+    tags: ['typescript', 'architecture', 'patterns'],
+  },
+  {
     key: 'testing-philosophy',
     focus:
       'how tests are reviewed, expectations around test coverage and structure, opinions on mocking vs. integration tests, and test naming habits',

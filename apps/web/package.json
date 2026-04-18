@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
+    "@clerk/nextjs": "latest",
     "ai": "^4.0.0",
     "next": "^15.0.0",
     "react": "^19.0.0",

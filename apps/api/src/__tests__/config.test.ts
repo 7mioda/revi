@@ -4,7 +4,10 @@ import { validateEnv } from '../config.js'
 const validEnv = {
   GITHUB_TOKEN: 'ghp_test',
   MONGODB_URI: 'mongodb://localhost/test',
+  MONGODB_DB_NAME: 'testdb',
   ANTHROPIC_API_KEY: 'sk-ant-test',
+  WEBHOOK_SECRET: 'whsec_test',
+  REVIEW_COMMAND: 'echo',
 }
 
 describe('validateEnv', () => {

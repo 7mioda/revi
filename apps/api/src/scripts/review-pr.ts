@@ -14,28 +14,37 @@
 import 'dotenv/config'
 import fs from 'fs'
 import path from 'path'
-import { Anthropic } from '@anthropic-ai/sdk'
+import { z } from 'zod'
+import { Agent } from '@mastra/core/agent'
+import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOctokitClient, fetchPRDiff } from '@revi/octokit'
 import type { OctokitClient, PRFile } from '@revi/octokit'
 
 // ---------------------------------------------------------------------------
-// Types
+// Output schemas — single source of truth for LLM structured output
 // ---------------------------------------------------------------------------
 
-/** A single inline review comment targeting a specific file and line. */
-export interface ReviewComment {
-  path: string
-  line: number
-  side: 'LEFT' | 'RIGHT'
-  body: string
-}
+export const ReviewCommentSchema = z.object({
+  path: z.string().optional(),
+  line: z.number().int().optional(),
+  side: z.enum(['LEFT', 'RIGHT']).optional(),
+  /** Set this to reply to an existing comment thread instead of posting a new inline comment. */
+  in_reply_to_id: z.number().int().optional(),
+  body: z.string().min(1),
+})
 
-/** The structured review produced by the LLM. */
-export interface ReviewResult {
-  summary: string
-  verdict: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'
-  comments: ReviewComment[]
-}
+export const ReviewResultSchema = z.object({
+  summary: z.string().min(1),
+  verdict: z.enum(['APPROVE', 'REQUEST_CHANGES', 'COMMENT']),
+  comments: z.array(ReviewCommentSchema),
+})
+
+export type ReviewComment = z.infer<typeof ReviewCommentSchema>
+export type ReviewResult = z.infer<typeof ReviewResultSchema>
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 /** The payload sent to GitHub's `POST /pulls/{n}/reviews` endpoint. */
 export interface GithubReviewPayload {
@@ -54,7 +63,9 @@ interface PRMeta {
 }
 
 /** An existing inline review comment already posted on the PR. */
-interface ExistingComment {
+export interface ExistingComment {
+  id: number
+  author: string
   path: string
   line: number
   body: string
@@ -67,7 +78,12 @@ export interface SkillEntry {
   tags?: string[]
 }
 
-const VALID_VERDICTS = new Set(['APPROVE', 'REQUEST_CHANGES', 'COMMENT'])
+/** A single preference entry from the DB. */
+export interface PreferenceEntry {
+  name: string
+  dimension: string
+  content: string
+}
 
 // ---------------------------------------------------------------------------
 // Pure helpers (exported for unit testing)
@@ -75,9 +91,6 @@ const VALID_VERDICTS = new Set(['APPROVE', 'REQUEST_CHANGES', 'COMMENT'])
 
 /**
  * Reads `output/skill.json` and returns the parsed array of skill entries.
- *
- * @param skillJsonPath - Absolute or relative path to `skill.json`.
- * @throws When the file does not exist or cannot be parsed.
  */
 export function loadSkillEntries(skillJsonPath: string): SkillEntry[] {
   const raw = fs.readFileSync(skillJsonPath, 'utf-8')
@@ -85,11 +98,8 @@ export function loadSkillEntries(skillJsonPath: string): SkillEntry[] {
 }
 
 /**
- * Reads `output/skill.json` and returns all `content` fields concatenated
- * with `---` separators — ready to use as an LLM system prompt.
- *
- * @param skillJsonPath - Absolute or relative path to `skill.json`.
- * @throws When the file does not exist or cannot be parsed.
+ * Returns all `content` fields from skill entries concatenated with `---`
+ * separators — ready to use as an LLM system prompt.
  */
 export function loadSkills(skillJsonPath: string): string {
   return loadSkillEntries(skillJsonPath)
@@ -98,56 +108,63 @@ export function loadSkills(skillJsonPath: string): string {
 }
 
 /**
- * Builds the full system prompt for the LLM review call.
+ * Builds the full system prompt for the review agent.
  *
- * Wraps the raw skill content with a strong identity framing and a mandatory
- * self-verification checklist so the model cannot drift toward generic AI output.
- *
- * @param skills - All skill entries (from skill.json + generated_rules).
+ * Skills encode the reviewer's technical patterns and coding rules.
+ * Preferences encode their communication style and behaviour — used as the
+ * mandatory self-check so the reviewer's voice is grounded in real data
+ * rather than hardcoded heuristics.
  */
-export function buildSystemPrompt(skills: SkillEntry[]): string {
+export function buildSystemPrompt(skills: SkillEntry[], preferences: PreferenceEntry[] = []): string {
   const skillsBlock = skills.map((s) => s.content).join('\n\n---\n\n')
+
+  const selfCheck =
+    preferences.length > 0
+      ? preferences.map((p) => `### ${p.name}\n${p.content}`).join('\n\n')
+      : '*(no preferences loaded — write in a natural, human tone)*'
 
   return `# YOUR IDENTITY
 
-You are NOT an AI assistant writing a code review. You ARE a specific software engineer — a real person with a defined voice, opinions, and habits. The skills below are not guidelines to consider; they ARE who you are.
+You are NOT an AI assistant writing a code review. You ARE a specific software engineer — a real person with a defined voice, opinions, and habits. The skills and preferences below are not guidelines to consider; they ARE who you are.
 
 Every word you produce must be indistinguishable from a comment this person actually wrote. If you catch yourself defaulting to polished, thorough, or AI-sounding language, stop and rewrite it.
 
 ---
 
-# YOUR SKILLS — READ AND EMBODY EVERY RULE
+# YOUR SKILLS — technical patterns and coding rules
 
 ${skillsBlock}
 
 ---
 
+# YOUR PREFERENCES — communication style and behaviour
+
+These are derived from your real GitHub activity. They define HOW you write, not what you review.
+
+${selfCheck}
+
+---
+
+# REPLYING TO EXISTING COMMENTS
+
+Existing review comments are listed in the user message with their numeric IDs in brackets, e.g. [#123]. If you want to reply directly to one of those threads instead of leaving a new inline comment, output a comment with in_reply_to_id set to that number and omit path, line, and side. Only reply when your response is a genuine follow-up to that specific comment. If a new standalone comment is more appropriate, use the normal path/line/side format instead.
+
+---
+
 # MANDATORY SELF-CHECK — run this before writing each comment or summary
 
-Before committing any word to output, verify against these rules extracted directly from your skills above:
+Verify every word against your preferences above. Additionally:
 
-1. **Length**: Is this comment 1–2 sentences? If it is longer, cut it. Only go longer when an architectural issue genuinely needs more context.
-2. **Tone**: Does it sound like a message sent to a teammate on Slack — casual, direct, zero formality? If it reads like a code review template or documentation, rewrite it.
-3. **Phrasing**:
-   - Suggestions must use softening language: "you can …", "we can …", "maybe …", "I would …", "I think …", "IMHO"
-   - Blockers must be plain imperatives with no hedging: "fix this", "remove this", "undo this"
-4. **Question-first**: If something looks wrong or unusual, ask why before declaring it wrong. ("why not using X here?", "you still need this?", "any specific reason for …?")
-5. **No formatting inside comments**: No bullet points, no headers, no bold/italic. Plain prose or a single short fragment.
-6. **Emoji rules**: 🔥 only for "this should be deleted", 😅 only to soften mild criticism, 🙏 for polite requests. No other emojis.
-7. **No formal language**: Never write "It would be advisable to …", "Please ensure that …", "This approach may lead to …", or any similar phrasing.
-8. **One concern per comment**: State each issue exactly once. If you cannot say it in 1–2 sentences, you are over-explaining.
+- **No AI punctuation**: Never use em dashes (-), en dashes, ellipsis characters, or typographic quotes. Only characters a human types on a keyboard.
+- **No formal language**: Never write "It would be advisable to ...", "Please ensure that ...", "This approach may lead to ...", or similar.
+- **One concern per comment**: State each issue exactly once. If you cannot say it in 1-2 sentences, cut it or drop it.
 
-**If a comment fails any point above, do not include it. Rewrite it until it passes, or drop it.**`
+**If a comment fails any point above, rewrite it until it passes, or drop it.**`
 }
 
 /**
  * Formats PR metadata, file diffs, existing comments, and loaded skills into
- * a single user message for the LLM review call.
- *
- * @param meta             - PR title, body, author, branch info.
- * @param files            - Changed files with their diff patches.
- * @param existingComments - Review comments already posted on the PR.
- * @param skills           - Parsed skill entries whose names are listed in the voice instruction.
+ * a single user message for the review agent.
  */
 export function buildUserPrompt(
   meta: PRMeta,
@@ -166,7 +183,7 @@ export function buildUserPrompt(
   const existingSection =
     existingComments.length > 0
       ? existingComments
-          .map((c) => `- ${c.path}:${c.line} — "${c.body}"`)
+          .map((c) => `- [#${c.id}] @${c.author} on ${c.path}:${c.line} — "${c.body}"`)
           .join('\n')
       : '*(none)*'
 
@@ -189,23 +206,12 @@ ${existingSection}
 Your system prompt contains ${skills.length} reviewer-style skill${skills.length === 1 ? '' : 's'}:
 ${skills.map((s) => `- **${s.name}**${s.tags && s.tags.length > 0 ? ` (${s.tags.join(', ')})` : ''}`).join('\n')}
 
-**MANDATORY — non-negotiable:** Every single word you write — each inline comment body and the summary — MUST sound exactly like this reviewer. Use their vocabulary, tone, cadence, and opinions as described in the skills above. Generic, polished, or AI-sounding feedback is a failure. If a comment does not sound like it was written by this specific reviewer, do not include it.
-
-Reply with **only** a JSON object (no markdown fences, no extra text):
-{
-  "summary": "one short paragraph in the reviewer's voice",
-  "verdict": "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
-  "comments": [
-    { "path": "<file>", "line": <number>, "side": "RIGHT", "body": "<comment in reviewer's voice>" }
-  ]
-}`
+**MANDATORY — non-negotiable:** Every single word you write — each inline comment body and the summary — MUST sound exactly like this reviewer. Use their vocabulary, tone, cadence, and opinions as described in the skills above. Generic, polished, or AI-sounding feedback is a failure. If a comment does not sound like it was written by this specific reviewer, do not include it.`
 }
 
 /**
- * Parses the raw LLM response into a typed `ReviewResult`.
+ * Parses raw LLM text into a typed `ReviewResult` via the Zod schema.
  * Throws a descriptive error when the JSON is malformed or fields are invalid.
- *
- * @param text - The raw text returned by the LLM.
  */
 export function parseReviewResult(text: string): ReviewResult {
   let parsed: unknown
@@ -214,37 +220,17 @@ export function parseReviewResult(text: string): ReviewResult {
   } catch {
     throw new Error(`LLM response is not valid JSON: ${text.slice(0, 200)}`)
   }
-
-  if (typeof parsed !== 'object' || parsed === null) {
-    throw new Error('LLM response JSON is not an object')
-  }
-
-  const obj = parsed as Record<string, unknown>
-
-  if (typeof obj['summary'] !== 'string' || obj['summary'].length === 0) {
-    throw new Error('LLM response is missing a valid "summary" string field')
-  }
-  if (typeof obj['verdict'] !== 'string' || !VALID_VERDICTS.has(obj['verdict'])) {
-    throw new Error(
-      `LLM response has an invalid "verdict" field: ${String(obj['verdict'])}. Must be APPROVE | REQUEST_CHANGES | COMMENT`,
-    )
-  }
-  if (!Array.isArray(obj['comments'])) {
-    throw new Error('LLM response is missing a valid "comments" array field')
-  }
-
-  return {
-    summary: obj['summary'],
-    verdict: obj['verdict'] as ReviewResult['verdict'],
-    comments: obj['comments'] as ReviewComment[],
+  try {
+    return ReviewResultSchema.parse(parsed)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    throw new Error(`LLM response failed schema validation: ${msg}`)
   }
 }
 
 /**
  * Maps a `ReviewResult` to the shape expected by GitHub's
  * `POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews` endpoint.
- *
- * @param result - The parsed LLM review output.
  */
 export function mapToGithubReview(result: ReviewResult): GithubReviewPayload {
   return {
@@ -293,8 +279,9 @@ async function fetchExistingComments(
   return data
     .filter((c) => c.path !== undefined && c.line !== undefined)
     .map((c) => ({
+      id: c.id,
+      author: c.user?.login ?? 'unknown',
       path: c.path,
-      // line is already checked above; the cast is safe
       line: c.line as number,
       body: c.body,
     }))
@@ -307,19 +294,29 @@ async function postReview(
   pullNumber: number,
   payload: GithubReviewPayload,
 ): Promise<void> {
+  const newComments = payload.comments.filter((c) => !c.in_reply_to_id)
+  const replies = payload.comments.filter((c) => !!c.in_reply_to_id)
+
   await client.request('POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews', {
     owner,
     repo,
     pull_number: pullNumber,
     body: payload.body,
     event: payload.event,
-    comments: payload.comments.map((c) => ({
-      path: c.path,
-      line: c.line,
-      side: c.side,
+    comments: newComments.map((c) => ({
+      path: c.path!,
+      line: c.line!,
+      side: c.side!,
       body: c.body,
     })),
   })
+
+  for (const reply of replies) {
+    await client.request(
+      'POST /repos/{owner}/{repo}/pulls/comments/{comment_id}/replies',
+      { owner, repo, comment_id: reply.in_reply_to_id!, body: reply.body },
+    )
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -346,7 +343,6 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
-  // Read env vars
   const githubToken = process.env['GITHUB_TOKEN']
   const anthropicKey = process.env['ANTHROPIC_API_KEY']
   if (!githubToken || githubToken.length === 0) {
@@ -371,8 +367,15 @@ async function main(): Promise<void> {
 
   process.stderr.write(`Loading skills from ${skillPath}…\n`)
   const skills = loadSkillEntries(skillPath)
-  const systemPrompt = buildSystemPrompt(skills)
   process.stderr.write(`  Loaded ${skills.length} skill(s): ${skills.map((s) => s.name).join(', ')}\n`)
+
+  const systemPrompt = buildSystemPrompt(skills)
+  const agent = new Agent({
+    id: 'code-reviewer',
+    name: 'code-reviewer',
+    instructions: systemPrompt,
+    model: createAnthropic({ apiKey: anthropicKey })('claude-sonnet-4-6'),
+  })
 
   const client = createOctokitClient(githubToken)
 
@@ -389,21 +392,11 @@ async function main(): Promise<void> {
   const userPrompt = buildUserPrompt(meta, files, existingComments, skills)
 
   process.stderr.write('Running LLM review…\n')
-  const anthropic = new Anthropic({ apiKey: anthropicKey })
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userPrompt }],
+  const { object: result } = await agent.generate(userPrompt, {
+    structuredOutput: { schema: ReviewResultSchema },
   })
 
-  const responseText = message.content
-    .filter((block) => block.type === 'text')
-    .map((block) => (block as { type: 'text'; text: string }).text)
-    .join('')
-
-  const reviewResult = parseReviewResult(responseText)
-  const payload = mapToGithubReview(reviewResult)
+  const payload = mapToGithubReview(result)
 
   process.stderr.write(
     `Posting review (verdict: ${payload.event}, ${payload.comments.length} inline comment(s))…\n`,

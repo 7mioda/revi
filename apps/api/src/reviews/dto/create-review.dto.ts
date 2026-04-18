@@ -20,4 +20,8 @@ export class CreateReviewDto {
   @IsOptional()
   @IsString()
   userId?: string
+
+  @IsOptional()
+  @IsString()
+  username?: string
 }

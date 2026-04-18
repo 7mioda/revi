@@ -1,0 +1,23 @@
+{
+  "name": "@revi/novu",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@novu/api": "^2.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}
