@@ -26,7 +26,7 @@ export class NovuService {
       { jobId, username, message: `Profile sync completed for ${username}` },
     )
     if (!result.ok) {
-      this.logger.error(`Novu trigger failed (profile-sync-done): ${String(result.error)}`)
+      this.logger.error(`Novu trigger failed (profile-sync-done)`)
     }
   }
 
@@ -39,7 +39,7 @@ export class NovuService {
       { jobId, username, message: errorMsg },
     )
     if (!result.ok) {
-      this.logger.error(`Novu trigger failed (profile-sync-failed): ${String(result.error)}`)
+      this.logger.error(`Novu trigger failed (profile-sync-failed)`)
     }
   }
 }
