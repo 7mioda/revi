@@ -14,9 +14,9 @@ declare module 'express' {
 }
 
 @Injectable()
-export class ClerkGuard implements CanActivate {
+export class Guard implements CanActivate {
   private readonly secretKey: string | undefined
-  private readonly logger = new Logger(ClerkGuard.name)
+  private readonly logger = new Logger(Guard.name)
 
   constructor(
     @Inject(ConfigService) config: ConfigService<Env, true>,
@@ -24,7 +24,7 @@ export class ClerkGuard implements CanActivate {
   ) {
     this.secretKey = config.get('CLERK_SECRET_KEY', { infer: true })
     if (!this.secretKey) {
-      this.logger.warn('CLERK_SECRET_KEY not set — ClerkGuard is running in no-op mode (all requests allowed)')
+      this.logger.warn('CLERK_SECRET_KEY not set — Guard is running in no-op mode (all requests allowed)')
     }
   }
 

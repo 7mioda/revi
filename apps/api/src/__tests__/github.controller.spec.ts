@@ -1,27 +1,36 @@
 import 'reflect-metadata'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { GithubController } from '../github/github.controller.js'
-import type { GithubService } from '../github/github.service.js'
+import { GetReposController } from '../github/controllers/get-repos/get-repos.controller.js'
+import { FetchCommentsController } from '../github/controllers/fetch-comments/fetch-comments.controller.js'
+import type { FetchUserReposService } from '../github/services/fetch-user-repos.service.js'
+import type { FetchUserCommentsService } from '../github/services/fetch-user-comments.service.js'
 import type { RepoRef } from '@revi/octokit'
 
-// Direct instantiation avoids NestJS DI metadata requirements in vitest
-// (esbuild doesn't emit emitDecoratorMetadata; DI wiring is tested at e2e level)
-function makeController(overrides: Partial<GithubService> = {}): GithubController {
+function makeGetReposController(overrides: Partial<FetchUserReposService> = {}): GetReposController {
   const service = {
-    getRepos: vi.fn<(u: string, t?: string) => Promise<RepoRef[]>>().mockResolvedValue([]),
-    fetchComments: vi.fn().mockResolvedValue([]),
+    execute: vi.fn<(u: string, t?: string) => Promise<RepoRef[]>>().mockResolvedValue([]),
     ...overrides,
-  } as unknown as GithubService
-  return new GithubController(service)
+  } as unknown as FetchUserReposService
+  return new GetReposController(service)
 }
 
-describe('GithubController', () => {
+function makeFetchCommentsController(
+  overrides: Partial<FetchUserCommentsService> = {},
+): FetchCommentsController {
+  const service = {
+    execute: vi.fn().mockResolvedValue([]),
+    ...overrides,
+  } as unknown as FetchUserCommentsService
+  return new FetchCommentsController(service)
+}
+
+describe('GetReposController', () => {
   beforeEach(() => vi.clearAllMocks())
 
   describe('GET /github/:username/repos', () => {
     it('returns username and repos array from service', async () => {
-      const controller = makeController({
-        getRepos: vi.fn().mockResolvedValue([{ owner: 'alice', name: 'repo-a' }]),
+      const controller = makeGetReposController({
+        execute: vi.fn().mockResolvedValue([{ owner: 'alice', name: 'repo-a' }]),
       })
 
       const result = await controller.getRepos('alice')
@@ -32,29 +41,33 @@ describe('GithubController', () => {
       })
     })
 
-    it('delegates to GithubService.getRepos with the username', async () => {
-      const getRepos = vi.fn<(u: string, t?: string) => Promise<RepoRef[]>>().mockResolvedValue([])
-      const controller = makeController({ getRepos })
+    it('delegates to FetchUserReposService.execute with the username', async () => {
+      const execute = vi.fn<(u: string, t?: string) => Promise<RepoRef[]>>().mockResolvedValue([])
+      const controller = makeGetReposController({ execute })
 
       await controller.getRepos('bob')
 
-      expect(getRepos).toHaveBeenCalledWith('bob', undefined)
+      expect(execute).toHaveBeenCalledWith('bob', undefined)
     })
 
     it('passes bearer token from Authorization header to service', async () => {
-      const getRepos = vi.fn<(u: string, t?: string) => Promise<RepoRef[]>>().mockResolvedValue([])
-      const controller = makeController({ getRepos })
+      const execute = vi.fn<(u: string, t?: string) => Promise<RepoRef[]>>().mockResolvedValue([])
+      const controller = makeGetReposController({ execute })
 
       await controller.getRepos('bob', 'Bearer mytoken')
 
-      expect(getRepos).toHaveBeenCalledWith('bob', 'mytoken')
+      expect(execute).toHaveBeenCalledWith('bob', 'mytoken')
     })
   })
+})
+
+describe('FetchCommentsController', () => {
+  beforeEach(() => vi.clearAllMocks())
 
   describe('POST /github/:username/comments', () => {
     it('returns breakdown and total count', async () => {
-      const controller = makeController({
-        fetchComments: vi.fn().mockResolvedValue([
+      const controller = makeFetchCommentsController({
+        execute: vi.fn().mockResolvedValue([
           { type: 'pr_review_comment' },
           { type: 'pr_review_comment' },
           { type: 'pr_comment' },
@@ -72,12 +85,12 @@ describe('GithubController', () => {
     })
 
     it('passes repos from body to service', async () => {
-      const fetchComments = vi.fn().mockResolvedValue([])
-      const controller = makeController({ fetchComments })
+      const execute = vi.fn().mockResolvedValue([])
+      const controller = makeFetchCommentsController({ execute })
 
       await controller.fetchComments('alice', { repos: ['alice/repo'] })
 
-      expect(fetchComments).toHaveBeenCalledWith('alice', ['alice/repo'], undefined)
+      expect(execute).toHaveBeenCalledWith('alice', ['alice/repo'], undefined)
     })
   })
 })

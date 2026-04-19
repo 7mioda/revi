@@ -21,6 +21,34 @@ type PersonaProfile = {
   avatarUrl: string | null
 }
 
+type MentionPersona = {
+  username: string
+  name: string | null
+  avatarUrl: string | null
+  avatar: string | null
+}
+
+/** Pull the persona info the API attached to an assistant message. */
+function getMentionPersona(msg: { annotations?: unknown[] }): MentionPersona | null {
+  const ann = msg.annotations
+  if (!Array.isArray(ann)) return null
+  for (const a of ann) {
+    if (!a || typeof a !== 'object') continue
+    const maybe = (a as { persona?: unknown }).persona
+    if (!maybe || typeof maybe !== 'object') continue
+    const p = maybe as Partial<MentionPersona>
+    if (typeof p.username === 'string') {
+      return {
+        username: p.username,
+        name: typeof p.name === 'string' ? p.name : null,
+        avatarUrl: typeof p.avatarUrl === 'string' ? p.avatarUrl : null,
+        avatar: typeof p.avatar === 'string' ? p.avatar : null,
+      }
+    }
+  }
+  return null
+}
+
 const PURPOSE_OPTIONS = [
   'I want to review PRs more consistently across my team',
   'I want to share my review style so others can learn from it',
@@ -227,7 +255,15 @@ export default function Chat() {
           {allVisibleMessages.map(({ msg, source }) => {
             const textContent = typeof msg.content === 'string' ? msg.content : null
             const invocations = msg.toolInvocations ?? []
-            const isPersonaAssistant = source === 'persona' && msg.role === 'assistant'
+            const mentionPersona = source === 'main' && msg.role === 'assistant' ? getMentionPersona(msg) : null
+            const isPersonaAssistant =
+              (source === 'persona' && msg.role === 'assistant') || !!mentionPersona
+            const avatarSrc = mentionPersona
+              ? (mentionPersona.avatar ?? mentionPersona.avatarUrl)
+              : (personaProfile?.avatarUrl ?? null)
+            const avatarAlt = mentionPersona
+              ? (mentionPersona.name ?? mentionPersona.username)
+              : (personaProfile?.name ?? personaProfile?.username ?? '')
 
             return (
               <div key={`${source}-${msg.id}`} className="flex flex-col gap-2" style={{ animation: 'message-in 0.3s ease-out' }}>
@@ -235,8 +271,8 @@ export default function Chat() {
                   <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {isPersonaAssistant && (
                       <div className="mr-2 mt-0.5 shrink-0">
-                        {personaProfile?.avatarUrl ? (
-                          <Image src={personaProfile.avatarUrl} alt={personaProfile.name ?? personaProfile.username} width={24} height={24} className="object-cover" />
+                        {avatarSrc ? (
+                          <Image src={avatarSrc} alt={avatarAlt} width={24} height={24} className="object-cover" />
                         ) : (
                           <div className="h-6 w-6 bg-gray-200" />
                         )}

@@ -7,7 +7,14 @@ const validEnv = {
   MONGODB_DB_NAME: 'testdb',
   ANTHROPIC_API_KEY: 'sk-ant-test',
   WEBHOOK_SECRET: 'whsec_test',
-  REVIEW_COMMAND: 'echo',
+  // GitHub App fields
+  GITHUB_APP_ID: '12345',
+  GITHUB_APP_CLIENT_ID: 'Iv1.abc123',
+  GITHUB_APP_CLIENT_SECRET: 'client_secret',
+  GITHUB_APP_WEBHOOK_SECRET: 'app_webhook_secret',
+  GITHUB_APP_SLUG: 'revi',
+  PUBLIC_URL: 'https://talk.withrevi.dev',
+  TOKEN_ENCRYPTION_KEY: 'dGVzdGtleXRlc3RrZXl0ZXN0a2V5dGVzdGtleXRlc3Q=',
 }
 
 describe('validateEnv', () => {
@@ -24,7 +31,31 @@ describe('validateEnv', () => {
     expect(result.PORT).toBe(3000)
   })
 
+  it('coerces GITHUB_APP_ID string to number', () => {
+    const result = validateEnv(validEnv)
+    expect(result.GITHUB_APP_ID).toBe(12345)
+    expect(typeof result.GITHUB_APP_ID).toBe('number')
+  })
+
   it('throws when GITHUB_TOKEN is missing', () => {
-    expect(() => validateEnv({})).toThrow()
+    const { GITHUB_TOKEN: _, ...rest } = validEnv
+    expect(() => validateEnv(rest)).toThrow()
+  })
+
+  it('throws when GITHUB_APP_ID is missing', () => {
+    const { GITHUB_APP_ID: _, ...rest } = validEnv
+    expect(() => validateEnv(rest)).toThrow()
+  })
+
+  it('throws when TOKEN_ENCRYPTION_KEY is missing', () => {
+    const { TOKEN_ENCRYPTION_KEY: _, ...rest } = validEnv
+    expect(() => validateEnv(rest)).toThrow()
+  })
+
+  it('allows optional fields to be absent', () => {
+    const result = validateEnv(validEnv)
+    expect(result.CLERK_SECRET_KEY).toBeUndefined()
+    expect(result.GITHUB_APP_PRIVATE_KEY).toBeUndefined()
+    expect(result.GITHUB_APP_PRIVATE_KEY_PATH).toBeUndefined()
   })
 })

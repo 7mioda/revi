@@ -2,7 +2,7 @@ import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { AppModule } from './app.module.js'
-import { HttpExceptionFilter } from './github/http-exception.filter.js'
+import { HttpExceptionFilter } from './github/lib/http-exception.filter.js'
 
 /** Bootstraps the NestJS HTTP server. */
 async function bootstrap(): Promise<void> {

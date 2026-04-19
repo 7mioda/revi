@@ -5,14 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { validateEnv } from './config.js'
 import type { Env } from './config.js'
 import { GithubModule } from './github/github.module.js'
-import { MeModule } from './me/me.module.js'
-import { SkillsModule } from './skills/skills.module.js'
-import { ReviewsModule } from './reviews/reviews.module.js'
-import { WebhookModule } from './webhook/webhook.module.js'
-import { UsersModule } from './users/users.module.js'
-import { PreferencesModule } from './preferences/preferences.module.js'
-import { ProfilesModule } from './profiles/profiles.module.js'
 import { AuthModule } from './auth/auth.module.js'
+import { ProfileModule } from './profile/profile.module.js'
 
 /**
  * Root application module.
@@ -34,14 +28,8 @@ import { AuthModule } from './auth/auth.module.js'
       }),
     }),
     GithubModule,
-    MeModule,
-    SkillsModule,
-    ReviewsModule,
-    WebhookModule,
-    UsersModule,
-    PreferencesModule,
-    ProfilesModule,
     AuthModule,
+    ProfileModule,
   ],
 })
 export class AppModule {}

@@ -8,7 +8,7 @@ vi.mock('@clerk/backend', () => ({
 }))
 
 import { verifyToken } from '@clerk/backend'
-import { ClerkGuard } from '../auth/clerk.guard.js'
+import { Guard } from '../auth/clerk.guard.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,14 +40,14 @@ function makeContext(headers: Record<string, string> = {}) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('ClerkGuard', () => {
+describe('Guard', () => {
   beforeEach(() => {
     vi.mocked(verifyToken).mockReset()
   })
 
   describe('no-op mode (CLERK_SECRET_KEY not set)', () => {
     it('allows any request and sets clerkUserId to null', async () => {
-      const guard = new ClerkGuard(makeConfig(undefined) as never, makeReflector(false) as never)
+      const guard = new Guard(makeConfig(undefined) as never, makeReflector(false) as never)
       const ctx = makeContext()
       const result = await guard.canActivate(ctx as never)
       expect(result).toBe(true)
@@ -57,7 +57,7 @@ describe('ClerkGuard', () => {
 
   describe('@Public() routes', () => {
     it('allows unauthenticated requests even when key is set', async () => {
-      const guard = new ClerkGuard(makeConfig('sk_test_123') as never, makeReflector(true) as never)
+      const guard = new Guard(makeConfig('sk_test_123') as never, makeReflector(true) as never)
       const ctx = makeContext()
       const result = await guard.canActivate(ctx as never)
       expect(result).toBe(true)
@@ -66,7 +66,7 @@ describe('ClerkGuard', () => {
 
   describe('key set, no Authorization header', () => {
     it('throws UnauthorizedException', async () => {
-      const guard = new ClerkGuard(makeConfig('sk_test_123') as never, makeReflector(false) as never)
+      const guard = new Guard(makeConfig('sk_test_123') as never, makeReflector(false) as never)
       const ctx = makeContext()
       await expect(guard.canActivate(ctx as never)).rejects.toThrow(UnauthorizedException)
     })
@@ -75,7 +75,7 @@ describe('ClerkGuard', () => {
   describe('key set, invalid token', () => {
     it('throws UnauthorizedException', async () => {
       vi.mocked(verifyToken).mockRejectedValue(new Error('invalid token'))
-      const guard = new ClerkGuard(makeConfig('sk_test_123') as never, makeReflector(false) as never)
+      const guard = new Guard(makeConfig('sk_test_123') as never, makeReflector(false) as never)
       const ctx = makeContext({ authorization: 'Bearer bad-token' })
       await expect(guard.canActivate(ctx as never)).rejects.toThrow(UnauthorizedException)
     })
@@ -84,7 +84,7 @@ describe('ClerkGuard', () => {
   describe('key set, valid token', () => {
     it('sets clerkUserId to the sub claim and returns true', async () => {
       vi.mocked(verifyToken).mockResolvedValue({ sub: 'user_abc123' } as never)
-      const guard = new ClerkGuard(makeConfig('sk_test_123') as never, makeReflector(false) as never)
+      const guard = new Guard(makeConfig('sk_test_123') as never, makeReflector(false) as never)
       const ctx = makeContext({ authorization: 'Bearer valid-token' })
       const result = await guard.canActivate(ctx as never)
       expect(result).toBe(true)

@@ -1,0 +1,6 @@
+export { CreateProfileController } from './create-profile/index.js'
+export { GetProfileController } from './get-profile/index.js'
+export { UpdateProfileController } from './update-profile/index.js'
+export { DeleteProfileController } from './delete-profile/index.js'
+export { ListProfileSkillsController } from './list-profile-skills/index.js'
+export { GetSkillController } from './get-skill/index.js'

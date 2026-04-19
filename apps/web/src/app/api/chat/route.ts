@@ -1,11 +1,61 @@
 import { anthropic } from '@ai-sdk/anthropic'
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { streamText, tool } from 'ai'
+import { createDataStreamResponse, streamText, tool, type JSONValue } from 'ai'
 import { z } from 'zod'
-import { buildSystem } from './agent.prompt'
-import type { UserContext } from './agent.prompt'
+import { buildSystem, buildPersonaSystem } from './agent.prompt'
+import type { UserContext, PersonaContext, PersonaAnnotation } from './agent.prompt'
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3000'
+
+/** Extracts @username mentions from free text. Matches GitHub-style logins. */
+function extractMentions(text: string): string[] {
+  const matches = text.match(/(?:^|\s)@([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38}))/g)
+  if (!matches) return []
+  const usernames = matches.map((m) => m.trim().slice(1))
+  return Array.from(new Set(usernames))
+}
+
+/** Flattens an AI SDK message's content to plain text. */
+function messageText(content: unknown): string {
+  if (typeof content === 'string') return content
+  if (Array.isArray(content)) {
+    return content
+      .filter((p): p is { type: 'text'; text: string } =>
+        typeof p === 'object' && p !== null && (p as { type?: unknown }).type === 'text',
+      )
+      .map((p) => p.text)
+      .join(' ')
+  }
+  return ''
+}
+
+/**
+ * Finds the active persona by walking user messages from newest to oldest
+ * and returning the most recent @mention. Once a sub-agent is engaged it
+ * stays engaged until the user mentions someone else.
+ */
+function activeMention(
+  messages: Array<{ role: string; content: unknown }>,
+): string | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]
+    if (m?.role !== 'user') continue
+    const mentions = extractMentions(messageText(m.content))
+    if (mentions.length > 0) return mentions[0]!
+  }
+  return null
+}
+
+/** Fetches persona context (profile + skills + preferences) from the API. */
+async function fetchPersonaContext(username: string): Promise<PersonaContext | null> {
+  try {
+    const res = await fetch(`${API_URL}/profiles/${encodeURIComponent(username)}/context`)
+    if (!res.ok) return null
+    return (await res.json()) as PersonaContext
+  } catch {
+    return null
+  }
+}
 
 /** Fetches Clerk user data and extracts the fields the agent needs. */
 async function getUserContext(userId: string): Promise<UserContext> {
@@ -47,6 +97,38 @@ export async function POST(req: Request) {
   const { userId } = await auth()
   const userCtx = userId ? await getUserContext(userId) : { name: null, email: null, githubUsername: null }
 
+  // If any user message in the thread mentions @username, the most recent one
+  // wins and that persona stays engaged for follow-ups until the user mentions
+  // someone else.
+  const mention = activeMention(messages)
+  if (mention) {
+    const personaCtx = await fetchPersonaContext(mention)
+    if (personaCtx) {
+      const annotation: PersonaAnnotation = {
+        persona: {
+          username: personaCtx.profile.username,
+          name: personaCtx.profile.name ?? null,
+          avatarUrl: personaCtx.profile.avatarUrl ?? null,
+          avatar: personaCtx.profile.avatar ?? null,
+        },
+      }
+      return createDataStreamResponse({
+        execute: (dataStream) => {
+          // Tag the streamed assistant message so the client can render the
+          // persona's avatar next to it via `message.annotations`.
+          dataStream.writeMessageAnnotation(annotation as unknown as JSONValue)
+          const personaResult = streamText({
+            model: anthropic('claude-sonnet-4-6'),
+            system: buildPersonaSystem(personaCtx, userCtx),
+            messages,
+            maxSteps: 5,
+          })
+          personaResult.mergeIntoDataStream(dataStream)
+        },
+      })
+    }
+  }
+
   const result = streamText({
     model: anthropic('claude-sonnet-4-6'),
     system: buildSystem(userCtx),
@@ -57,7 +139,6 @@ export async function POST(req: Request) {
           'Get a summary of Revi activity since the user last visited. Call this once at the start of the conversation in response to __init__, before greeting the user, when githubUsername is known.',
         parameters: z.object({}),
         execute: async () => {
-          console.log('get_activity_summary', userId)
           if (!userId) return { firstTime: true }
           try {
             const client = await clerkClient()
@@ -69,13 +150,10 @@ export async function POST(req: Request) {
             void client.users.updateUser(userId, {
               publicMetadata: { ...meta, lastSeenAt: now },
             })
-            console.log('lastSeenAt', lastSeenAt)
-            console.log('githubUsername', githubUsername)
             if (!lastSeenAt || !githubUsername) return { firstTime: true }
             const res = await fetch(
               `${API_URL}/profiles/${githubUsername}/activity-summary?since=${encodeURIComponent(lastSeenAt)}`,
             )
-            console.log('res', res)
             if (!res.ok) return { firstTime: true }
             const data = await res.json() as unknown
             return { firstTime: false, since: lastSeenAt, githubUsername, ...(data as object) }
