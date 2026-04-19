@@ -4772,6 +4772,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"label@workspace:packages/label":
+  version: 0.0.0-use.local
+  resolution: "label@workspace:packages/label"
+  dependencies:
+    "@ai-sdk/anthropic": ^1.0.0
+    "@types/node": ^22.19.17
+    ai: ^4.0.0
+    dotenv: ^16.4.7
+    tsx: ^4.19.0
+    typescript: ^5.7.0
+    zod: ^3.24.0
+  languageName: unknown
+  linkType: soft
+
 "lexical-beautiful-mentions@npm:^0.1.48":
   version: 0.1.48
   resolution: "lexical-beautiful-mentions@npm:0.1.48"
